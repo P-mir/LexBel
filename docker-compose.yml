@@ -1,0 +1,15 @@
+version: "3.9"
+
+services:
+  legal_rag_be:
+    build:
+      context: .
+      args:
+        INSTALL_DEV: "true"
+    container_name: legal_rag_be
+    ports:
+      - "8501:8501"
+    restart: unless-stopped
+
+    volumes:
+      - ./:/app
