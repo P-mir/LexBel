@@ -1,99 +1,51 @@
 
+from typing import List
 
-from typing import Listfrom typing import List
+import nltk
+from nltk.tokenize import sent_tokenize
 
+from utils.logging_config import setup_logger
+from utils.models import LegalArticle, TextChunk
 
-
-import nltkimport nltk
-
-from nltk.tokenize import sent_tokenizefrom nltk.tokenize import sent_tokenize
-
-
-
-from utils.logging_config import setup_loggerfrom utils.logging_config import setup_logger
-
-from utils.models import LegalArticle, TextChunkfrom utils.models import LegalArticle, TextChunk
+logger = setup_logger(__name__)
 
 
-
-logger = setup_logger(__name__)logger = setup_logger(__name__)
-
-
-
-
-
-class TextChunker:class TextChunker:
-
-    """Text chunker for legal articles."""
+class TextChunker:
 
     def __init__(
-
-    def __init__(        self,
-
-        self,        chunk_size: int = 500,
-
-        chunk_size: int = 500,        chunk_overlap: int = 100,
-
-        chunk_overlap: int = 100,        min_chunk_size: int = 50,
-
-        min_chunk_size: int = 50,        language: str = "french",
-
-        language: str = "french",    ):
-
-    ):        self.chunk_size = chunk_size
-
-        """Initialize the text chunker.        self.chunk_overlap = chunk_overlap
-
+        self,
+        chunk_size: int = 500,
+        chunk_overlap: int = 100,
+        min_chunk_size: int = 50,
+        language: str = "french",
+    ):
+        self.chunk_size = chunk_size
+        self.chunk_overlap = chunk_overlap
         self.min_chunk_size = min_chunk_size
+        self.language = language
 
-        Args:        self.language = language
-
-            chunk_size: Maximum characters per chunk
-
-            chunk_overlap: Number of overlapping characters between chunks        # Download NLTK data if needed
-
-            min_chunk_size: Minimum chunk size to create        try:
-
-            language: Language for sentence tokenization            nltk.data.find('tokenizers/punkt')
-
-        """        except LookupError:
-
-        self.chunk_size = chunk_size            logger.info("Downloading NLTK punkt tokenizer...")
-
-        self.chunk_overlap = chunk_overlap            nltk.download('punkt', quiet=True)
-
-        self.min_chunk_size = min_chunk_size
-
-        self.language = language        # Add French sentence tokenizer
-
+        # Download NLTK data if needed
         try:
-
-        # Download NLTK data if needed            nltk.data.find('tokenizers/punkt/french.pickle')
-
-        try:        except LookupError:
-
-            nltk.data.find('tokenizers/punkt')            logger.info("Downloading French NLTK data...")
-
-        except LookupError:            nltk.download('punkt', quiet=True)
-
+            nltk.data.find('tokenizers/punkt')
+        except LookupError:
             logger.info("Downloading NLTK punkt tokenizer...")
-
-            nltk.download('punkt', quiet=True)    def chunk_article(self, article: LegalArticle) -> List[TextChunk]:
-
-        """LangChain chuncker can be limiting..."""
+            nltk.download('punkt', quiet=True)
 
         # Add French sentence tokenizer
-
-        try:        text = article.article
-
+        try:
             nltk.data.find('tokenizers/punkt/french.pickle')
+        except LookupError:
+            logger.info("Downloading French NLTK data...")
+            nltk.download('punkt', quiet=True)
 
-        except LookupError:        # Handle empty or very short text
+    def chunk_article(self, article: LegalArticle) -> List[TextChunk]:
+        """LangChain chuncker can be limiting..."""
 
-            logger.info("Downloading French NLTK data...")        if len(text) < self.min_chunk_size:
+        text = article.article
 
-            nltk.download('punkt', quiet=True)            return [self._create_chunk(article, text, 0, len(text), 0)]
-
+        # Handle empty or very short text
+        if len(text) < self.min_chunk_size:
+            return [self._create_chunk(article, text, 0, len(text), 0)]
 
         # Split into sentences
         sentences = sent_tokenize(text, language=self.language)
