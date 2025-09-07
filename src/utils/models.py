@@ -1,6 +1,8 @@
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
+
+from pydantic import BaseModel, Field
 
 
 @dataclass
@@ -69,3 +71,35 @@ class TextChunk:
             'char_end': self.char_end,
             'metadata': self.metadata,
         }
+
+
+class RetrievalResult(BaseModel):
+    """Represents a single retrieval result."""
+
+    chunk_id: str
+    text: str
+    score: float
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+    article_id: int
+    reference: str
+    code: str
+
+    class Config:
+        """Pydantic config."""
+        arbitrary_types_allowed = True
+        from_attributes = True
+
+
+class QueryResponse(BaseModel):
+    """Represents a complete query response."""
+
+    query: str
+    answer: str
+    sources: List[RetrievalResult]
+    retrieval_details: Dict[str, Any] = Field(default_factory=dict)
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+
+    class Config:
+        """Pydantic config."""
+        arbitrary_types_allowed = True
+        from_attributes = True  # Allow from_orm style conversion
