@@ -16,7 +16,7 @@ sys.path.insert(0, str(Path(__file__).parent / "src"))
 
 from analytics.metrics import LexBelAnalytics
 from chains import LangChainQA
-from embeddings import CloudEmbedder, LocalEmbedder
+from embeddings import CloudEmbedder
 from retrievers import HybridRetriever, MMRRetriever
 from ui.dashboard import render_dashboard
 from ui.styling import get_custom_css
@@ -52,16 +52,8 @@ def load_system(vector_store_dir: str, retriever_type: str):
     # Load config
     config = load_json(vector_store_path / "config.json")
     embedding_dim = config['embedding_dim']
-    embedder_type = config.get('embedder_type', 'local')
 
-    # Initialize embedder based on config
-    if embedder_type == "mistral":
-        embedder = CloudEmbedder(model_name="mistral-embed", batch_size=100)
-    else:
-        embedder = LocalEmbedder(
-            model_name="sentence-transformers/paraphrase-multilingual-mpnet-base-v2",
-            device="cpu",
-        )
+    embedder = CloudEmbedder(model_name="mistral-embed", batch_size=100)
 
     vector_store = FAISSVectorStore(embedding_dim=embedding_dim)
     vector_store.load(vector_store_path)
