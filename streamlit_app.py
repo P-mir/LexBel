@@ -6,7 +6,6 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-# Load environment variables FIRST before any other imports
 load_dotenv()
 
 import streamlit as st
@@ -97,15 +96,15 @@ def main():
         display: block !important;
         visibility: visible !important;
     }
-    
+
     section[data-testid="stSidebar"] button[kind="header"] {
         display: none !important;
     }
-    
+
     section[data-testid="stSidebar"] > div {
         display: block !important;
     }
-    
+
     [data-testid="collapsedControl"] {
         display: none !important;
     }
@@ -151,12 +150,30 @@ def main():
     # Query interface - display first
     with st.expander("📝 Questions Suggérées", expanded=False):
         st.markdown("""
-        - Quelles sont les directives européennes transposées par le Code Bruxellois de l'Air ?
-        - Quels sont les objectifs du présent Code en matière d'énergie ?
-        - Qu'est-ce qu'un pouvoir public selon le Code ?
-        - Quelle est la définition de l'efficacité énergétique ?
-        - Comment est définie la biomasse ?
+        **🏠 Énergie & Logement**
+        - Comment installer des panneaux solaires photovoltaïques à Bruxelles ?
+        - Quelles sont les exigences PEB pour rénover mon logement ?
+        - Quelle est la durée de validité d'un certificat PEB ?
+        - Quels sont les objectifs climatiques de la Région bruxelloise ?
+        
+        **🏛️ Urbanisme & Constitution**
+        - Quelles informations doit mentionner le notaire lors d'une vente immobilière ?
+        - Qu'est-ce qu'un permis d'urbanisme et quelles charges peuvent être imposées ?
+        - Quelles matières sont visées par l'article 39 de la Constitution ?
+        
+        **⚖️ Sanctions & Infractions**
+        - Quelles sont les sanctions pour non-respect des obligations PEB ?
+        - Qui est responsable en cas d'infraction dans une zone de basses émissions ?
+        - Quelles peines sont prévues pour les infractions environnementales ?
+        
+        **🏥 Santé & Action Sociale (Wallonie)**
+        - Comment est organisée la Commission wallonne de la Santé ?
+        - Quels services existent pour les personnes handicapées en Wallonie ?
+        - Qu'est-ce qu'un centre de coordination de soins à domicile ?
+        - Quels sont les services d'aide aux familles et aux aînés ?
+
         """)
+
 
     question = st.text_area(
         "Votre Question",
@@ -240,16 +257,16 @@ def main():
     # Load RAG system in background (after UI is displayed)
     loading_placeholder = st.sidebar.empty()
     stats_placeholder = st.sidebar.empty()
-    
+
     try:
         with loading_placeholder:
             with st.spinner("⏳ Chargement du système..."):
                 retriever, _, _, _, config = load_system(
                     vector_store_dir, retriever_type
                 )
-        
+
         loading_placeholder.empty()
-        
+
         with stats_placeholder:
             st.markdown(f"""
             <div style="display: flex; justify-content: space-around; margin: 1rem 0;">
