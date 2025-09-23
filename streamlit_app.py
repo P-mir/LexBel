@@ -148,6 +148,43 @@ def main():
     st.markdown("# Recherche Juridique")
     st.markdown("*Assistant intelligent pour le droit belge*")
 
+    # Query interface - display first
+    with st.expander("📝 Questions Suggérées", expanded=False):
+        st.markdown("""
+        - Quelles sont les directives européennes transposées par le Code Bruxellois de l'Air ?
+        - Quels sont les objectifs du présent Code en matière d'énergie ?
+        - Qu'est-ce qu'un pouvoir public selon le Code ?
+        - Quelle est la définition de l'efficacité énergétique ?
+        - Comment est définie la biomasse ?
+        """)
+
+    question = st.text_area(
+        "Votre Question",
+        height=120,
+        placeholder="Posez votre question sur le droit belge...",
+        label_visibility="collapsed",
+        max_chars=1000
+    )
+
+    if question:
+        char_count = len(question)
+        token_estimate = char_count // 4
+        if token_estimate > 1000:
+            st.error(f"⚠️ Question trop longue: ~{token_estimate} tokens (max: 1000 tokens)")
+        elif token_estimate > 800:
+            st.warning(f"Attention: ~{token_estimate} tokens / 1000")
+        else:
+            st.caption(f"📊 ~{token_estimate} tokens / 1000")
+
+    col1, col2, col3 = st.columns([2, 1, 1])
+    with col1:
+        search_button = st.button("🔎 Rechercher", type="primary", use_container_width=True)
+    with col2:
+        clear_button = st.button("🗑️ Effacer", use_container_width=True)
+
+    if clear_button:
+        st.rerun()
+
     with st.sidebar:
         st.markdown("### Paramètres de Recherche")
 
@@ -200,13 +237,20 @@ def main():
 
         st.markdown("---")
 
-    # Load RAG system
+    # Load RAG system in background (after UI is displayed)
+    loading_placeholder = st.sidebar.empty()
+    stats_placeholder = st.sidebar.empty()
+    
     try:
-        retriever, _, _, _, config = load_system(
-            vector_store_dir, retriever_type
-        )
-
-        with st.sidebar:
+        with loading_placeholder:
+            with st.spinner("⏳ Chargement du système..."):
+                retriever, _, _, _, config = load_system(
+                    vector_store_dir, retriever_type
+                )
+        
+        loading_placeholder.empty()
+        
+        with stats_placeholder:
             st.markdown(f"""
             <div style="display: flex; justify-content: space-around; margin: 1rem 0;">
                 <div style="text-align: center;">
@@ -220,7 +264,7 @@ def main():
             </div>
             """, unsafe_allow_html=True)
 
-            # Sidebar footer with contact
+        with st.sidebar:
             st.markdown("---")
             st.markdown("""
             <div style="text-align: center; font-size: 0.75rem; margin-top: 2rem;">
@@ -231,47 +275,10 @@ def main():
             """, unsafe_allow_html=True)
 
     except Exception as e:
+        loading_placeholder.empty()
         st.sidebar.error(f"❌ Erreur: {e}")
         st.error("Veuillez vérifier la configuration du système.")
         return
-
-    # Query interface
-    with st.expander("📝 Questions Suggérées", expanded=False):
-        st.markdown("""
-        - Quelles sont les directives européennes transposées par le Code Bruxellois de l'Air ?
-        - Quels sont les objectifs du présent Code en matière d'énergie ?
-        - Qu'est-ce qu'un pouvoir public selon le Code ?
-        - Quelle est la définition de l'efficacité énergétique ?
-        - Comment est définie la biomasse ?
-        """)
-
-    question = st.text_area(
-        "Votre Question",
-        height=120,
-        placeholder="Posez votre question sur le droit belge...",
-        label_visibility="collapsed",
-        max_chars=1000
-    )
-
-    if question:
-        char_count = len(question)
-        # rough estimation: 1 token ≈ 4 characters for French
-        token_estimate = char_count // 4
-        if token_estimate > 1000:
-            st.error(f"⚠️ Question trop longue: ~{token_estimate} tokens (max: 1000 tokens)")
-        elif token_estimate > 800:
-            st.warning(f"Attention: ~{token_estimate} tokens / 1000")
-        else:
-            st.caption(f"📊 ~{token_estimate} tokens / 1000")
-
-    col1, col2, col3 = st.columns([2, 1, 1])
-    with col1:
-        search_button = st.button("🔎 Rechercher", type="primary", use_container_width=True)
-    with col2:
-        clear_button = st.button("🗑️ Effacer", use_container_width=True)
-
-    if clear_button:
-        st.rerun()
 
     if search_button and question:
         # Validate token limit
