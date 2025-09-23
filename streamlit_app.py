@@ -99,28 +99,23 @@ def main():
     st.markdown(get_custom_css(), unsafe_allow_html=True)
     analytics = load_analytics()
 
-    # Enhanced sidebar toggle button styling
     st.markdown("""
     <style>
-    /* Make sidebar toggle more visible when collapsed */
+    section[data-testid="stSidebar"] {
+        display: block !important;
+        visibility: visible !important;
+    }
+    
+    section[data-testid="stSidebar"] button[kind="header"] {
+        display: none !important;
+    }
+    
+    section[data-testid="stSidebar"] > div {
+        display: block !important;
+    }
+    
     [data-testid="collapsedControl"] {
-        background: #1a365d !important;
-        border: 2px solid #d4af37 !important;
-        border-radius: 0 8px 8px 0 !important;
-        padding: 0.75rem !important;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.3) !important;
-        z-index: 999999 !important;
-    }
-
-    [data-testid="collapsedControl"]:hover {
-        background: #d4af37 !important;
-        transform: translateX(4px);
-    }
-
-    [data-testid="collapsedControl"] svg {
-        color: white !important;
-        width: 1.5rem !important;
-        height: 1.5rem !important;
+        display: none !important;
     }
     </style>
     """, unsafe_allow_html=True)
