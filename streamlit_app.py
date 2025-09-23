@@ -150,28 +150,11 @@ def main():
     # Query interface - display first
     with st.expander("📝 Questions Suggérées", expanded=False):
         st.markdown("""
-        **🏠 Énergie & Logement**
-        - Comment installer des panneaux solaires photovoltaïques à Bruxelles ?
-        - Quelles sont les exigences PEB pour rénover mon logement ?
-        - Quelle est la durée de validité d'un certificat PEB ?
         - Quels sont les objectifs climatiques de la Région bruxelloise ?
-        
-        **🏛️ Urbanisme & Constitution**
         - Quelles informations doit mentionner le notaire lors d'une vente immobilière ?
-        - Qu'est-ce qu'un permis d'urbanisme et quelles charges peuvent être imposées ?
+        - Comment est définie la biomasse ?
         - Quelles matières sont visées par l'article 39 de la Constitution ?
-        
-        **⚖️ Sanctions & Infractions**
-        - Quelles sont les sanctions pour non-respect des obligations PEB ?
-        - Qui est responsable en cas d'infraction dans une zone de basses émissions ?
-        - Quelles peines sont prévues pour les infractions environnementales ?
-        
-        **🏥 Santé & Action Sociale (Wallonie)**
-        - Comment est organisée la Commission wallonne de la Santé ?
         - Quels services existent pour les personnes handicapées en Wallonie ?
-        - Qu'est-ce qu'un centre de coordination de soins à domicile ?
-        - Quels sont les services d'aide aux familles et aux aînés ?
-
         """)
 
 
