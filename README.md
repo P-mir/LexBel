@@ -14,9 +14,9 @@ LexBel allows citizens to ask juridic questions with the insurance that the answ
 
 ### Demo
 
-[![Watch Demo](assets/tumbnail.png)](https://github.com/P-mir/LexBel/blob/main/assets/demo.mp4)
 
-*Click to watch the demo video*
+https://github.com/user-attachments/assets/b52fa5de-ecf9-4210-a7a2-564d15aa63ae
+
 
 ## Covered Legal Codes
 
@@ -161,3 +161,4 @@ If you use this dataset in your research, please cite:
 ```
 
 </details>
+

@@ -33,7 +33,7 @@ class CloudLLM(BaseLLM):
         """Initialize cloud LLM with Mistral API.
 
         Args:
-            model_name: Mistral model name (e.g., "mistral-small-latest", "mistral-medium-latest")
+            model_name: Mistral model name
             api_key: Mistral API key
         """
         try:
