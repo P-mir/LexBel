@@ -12,7 +12,11 @@
 
 LexBel allows citizens to ask juridic questions with the insurance that the answers are not hallucinated by the LLM.
 
+### Demo
 
+[![Watch Demo](assets/tumbnail.png)](https://github.com/P-mir/LexBel/blob/main/assets/demo.mp4)
+
+*Click to watch the demo video*
 
 ## Covered Legal Codes
 
