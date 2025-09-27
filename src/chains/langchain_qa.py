@@ -1,5 +1,6 @@
 
 import os
+import time
 from typing import Any, Optional
 
 from langchain.chains import LLMChain
@@ -8,6 +9,7 @@ from langchain.prompts import PromptTemplate
 from langchain_mistralai import ChatMistralAI
 
 from llm import LocalLLM as LocalLLMAdapter
+from observability import calculate_cost, estimate_tokens, get_tracer
 from utils.logging_config import setup_logger
 from utils.models import QueryResponse
 
@@ -102,27 +104,90 @@ class LangChainQA:
         )
 
         self.chain = LLMChain(llm=self.llm, prompt=self.prompt)
+        self.model_name = model_name
 
-    def query(self, question: str, top_k: int = 5) -> QueryResponse:
+    def query(
+        self,
+        question: str,
+        top_k: int = 5,
+        trace_id: Optional[str] = None,
+        session_id: Optional[str] = None
+    ) -> QueryResponse:
         """Answer a question using the RAG system.
 
         Args:
             question: User question
             top_k: Number of documents to retrieve
+            trace_id: Optional trace ID for Langfuse
+            session_id: Optional session ID for grouping queries
 
         Returns:
             QueryResponse with answer and sources
         """
+        tracer = get_tracer()
+        trace = None
+
+        # Create trace if enabled
+        if tracer.enabled and not trace_id:
+            trace = tracer.create_trace(
+                name="rag_query",
+                session_id=session_id,
+                metadata={
+                    "retriever_type": type(self.retriever).__name__,
+                    "llm_type": self.llm_type,
+                    "model": self.model_name,
+                    "top_k": top_k
+                },
+                tags=["rag", "legal", "qa"]
+            )
+            trace_id = trace.id if trace else None
+
+        retrieval_start = time.time()
         logger.info(f"Retrieving documents for question: {question[:100]}...")
+
+        # Retrieval span
+        if tracer.enabled and trace_id:
+            retrieval_span = tracer.client.span(
+                trace_id=trace_id,
+                name="retrieval",
+                input={"question": question, "top_k": top_k},
+                start_time=retrieval_start
+            )
+
         sources = self.retriever.retrieve(question, top_k=top_k)
+        retrieval_duration = time.time() - retrieval_start
+
+        # Update retrieval span
+        if tracer.enabled and trace_id:
+            avg_score = sum(s.score for s in sources) / len(sources) if sources else 0
+            retrieval_span.end(
+                output={
+                    "num_sources": len(sources),
+                    "sources": [s.reference for s in sources],
+                    "avg_similarity_score": avg_score
+                },
+                metadata={
+                    "duration_ms": retrieval_duration * 1000,
+                    "retriever": type(self.retriever).__name__
+                }
+            )
 
         if not sources:
-            return QueryResponse(
+            response = QueryResponse(
                 query=question,
                 answer="Je n'ai pas trouvé d'articles pertinents pour répondre à cette question.",
                 sources=[],
                 retrieval_details={"num_sources": 0},
             )
+
+            if trace:
+                trace.update(
+                    output={"answer": response.answer, "num_sources": 0},
+                    metadata={"status": "no_sources_found"}
+                )
+                tracer.flush()
+
+            return response
 
         # Format context
         context_parts = []
@@ -132,13 +197,61 @@ class LangChainQA:
             )
         context = "\n".join(context_parts)
 
+        input_tokens = estimate_tokens(context) + estimate_tokens(question)
+
         logger.info("Generating answer with LLM...")
+        generation_start = time.time()
+
         try:
             result = self.chain.run(context=context, question=question)
             answer = result.strip()
+            generation_duration = time.time() - generation_start
+
+            # Estimate output tokens and cost
+            output_tokens = estimate_tokens(answer)
+            cost_info = calculate_cost(self.model_name, input_tokens, output_tokens)
+
+            # Track generation
+            if tracer.enabled and trace_id:
+                tracer.client.generation(
+                    trace_id=trace_id,
+                    name="llm_generation",
+                    model=self.model_name,
+                    input=[
+                        {"role": "system", "content": QA_PROMPT_TEMPLATE},
+                        {"role": "user", "content": f"Context: {context[:200]}...\n\nQuestion: {question}"}
+                    ],
+                    output=answer,
+                    usage={
+                        "input": input_tokens,
+                        "output": output_tokens,
+                        "total": input_tokens + output_tokens,
+                        "unit": "TOKENS"
+                    },
+                    metadata={
+                        "duration_ms": generation_duration * 1000,
+                        "cost_usd": cost_info["total_cost"],
+                        "input_cost_usd": cost_info["input_cost"],
+                        "output_cost_usd": cost_info["output_cost"]
+                    },
+                    start_time=generation_start,
+                    end_time=time.time()
+                )
+
         except Exception as e:
             logger.error(f"LLM generation failed: {e}")
             answer = f"Erreur lors de la génération de la réponse: {e}"
+            cost_info = {"total_cost": 0}
+
+            if tracer.enabled and trace_id:
+                tracer.client.span(
+                    trace_id=trace_id,
+                    name="llm_error",
+                    input={"question": question},
+                    output={"error": str(e)},
+                    metadata={"error_type": type(e).__name__},
+                    level="ERROR"
+                )
 
         # Build response
         response = QueryResponse(
@@ -149,8 +262,25 @@ class LangChainQA:
                 "num_sources": len(sources),
                 "retrieval_method": type(self.retriever).__name__,
                 "llm_type": self.llm_type,
+                "cost_usd": cost_info.get("total_cost", 0),
+                "total_tokens": cost_info.get("input_tokens", 0) + cost_info.get("output_tokens", 0)
             },
         )
+
+        # Update trace
+        if trace:
+            trace.update(
+                output={
+                    "answer": answer,
+                    "num_sources": len(sources),
+                    "cost_usd": cost_info.get("total_cost", 0)
+                },
+                metadata={
+                    "total_tokens": cost_info.get("input_tokens", 0) + cost_info.get("output_tokens", 0),
+                    "retrieval_duration_ms": retrieval_duration * 1000
+                }
+            )
+            tracer.flush()
 
         logger.info("Query completed successfully")
         return response
