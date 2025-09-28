@@ -16,10 +16,12 @@ sys.path.insert(0, str(Path(__file__).parent / "src"))
 from analytics.metrics import LexBelAnalytics
 from chains import LangChainQA
 from embeddings import CloudEmbedder
+from observability import LangfuseAnalytics, generate_session_id, get_tracer
 from retrievers import HybridRetriever, MMRRetriever
 from ui.dashboard import render_dashboard
+from ui.langfuse_dashboard import render_langfuse_dashboard
 from ui.styling import get_custom_css
-from utils.helpers import load_json, update_metrics
+from utils.helpers import load_json
 from utils.logging_config import setup_logger
 from utils.models import TextChunk
 from vector_store import FAISSVectorStore
@@ -90,6 +92,16 @@ def main():
     st.markdown(get_custom_css(), unsafe_allow_html=True)
     analytics = load_analytics()
 
+    # Initialize session state
+    if 'session_id' not in st.session_state:
+        st.session_state.session_id = generate_session_id()
+        logger.info(f"New session started: {st.session_state.session_id}")
+
+    # Initialize Langfuse tracer
+    tracer = get_tracer()
+    if tracer.enabled:
+        logger.info("Langfuse tracing enabled")
+
     st.markdown("""
     <style>
     section[data-testid="stSidebar"] {
@@ -132,7 +144,7 @@ def main():
 
         page = st.radio(
             "Navigation",
-            options=["🔍 Recherche", "📊 Tableau de Bord"],
+            options=["🔍 Recherche", "📊 Tableau de Bord", "🔍 Langfuse Monitoring"],
             label_visibility="collapsed"
         )
 
@@ -141,6 +153,11 @@ def main():
     # Main content based on page selection
     if page == "📊 Tableau de Bord":
         render_dashboard(analytics.get_dashboard_stats())
+        return
+
+    if page == "🔍 Langfuse Monitoring":
+        langfuse_analytics = LangfuseAnalytics()
+        render_langfuse_dashboard(langfuse_analytics.get_dashboard_stats())
         return
 
     # Search page
@@ -338,7 +355,11 @@ def main():
                         llm_type="cloud",
                     )
 
-                    response = qa_chain.query(question, top_k=top_k)
+                    response = qa_chain.query(
+                        question,
+                        top_k=top_k,
+                        session_id=st.session_state.session_id
+                    )
                     total_time_ms = (time.time() - start_time) * 1000
 
                     # Log to analytics
@@ -347,7 +368,9 @@ def main():
                         retriever_type=retriever_type,
                         num_results=len(response.sources),
                         retrieval_time_ms=total_time_ms,
-                        sources=[s.reference for s in response.sources]
+                        sources=[s.reference for s in response.sources],
+                        cost_usd=response.retrieval_details.get('cost_usd', 0.0),
+                        tokens=response.retrieval_details.get('total_tokens', 0)
                     )
 
                     st.markdown("## 💡 Réponse")
@@ -357,11 +380,17 @@ def main():
                     </div>
                     """, unsafe_allow_html=True)
 
-                    col_time, col_sources = st.columns(2)
+                    col_time, col_sources, col_cost = st.columns(3)
                     with col_time:
                         st.metric("Temps Total", f"{total_time_ms:.0f}ms")
                     with col_sources:
                         st.metric("Sources Utilisées", len(response.sources))
+                    with col_cost:
+                        cost_usd = response.retrieval_details.get('cost_usd', 0)
+                        if cost_usd > 0:
+                            st.metric("Coût", f"${cost_usd:.4f}")
+                        else:
+                            st.metric("Tokens", response.retrieval_details.get('total_tokens', 'N/A'))
 
                     st.markdown("## 📚 Sources")
 
