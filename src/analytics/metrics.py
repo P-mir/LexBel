@@ -45,7 +45,9 @@ class LexBelAnalytics:
         num_results: int,
         retrieval_time_ms: float,
         sources: List[str],
-        user_id: Optional[str] = None
+        user_id: Optional[str] = None,
+        cost_usd: float = 0.0,
+        tokens: int = 0
     ):
         """Log a search query."""
         search_record = {
@@ -55,7 +57,9 @@ class LexBelAnalytics:
             'num_results': num_results,
             'retrieval_time_ms': retrieval_time_ms,
             'sources': sources,
-            'user_id': user_id or 'anonymous'
+            'user_id': user_id or 'anonymous',
+            'cost_usd': cost_usd,
+            'tokens': tokens
         }
 
         self.data['searches'].append(search_record)
@@ -72,13 +76,17 @@ class LexBelAnalytics:
             self.data['daily_stats'][today] = {
                 'queries': 0,
                 'avg_retrieval_ms': 0,
-                'total_retrieval_ms': 0
+                'total_retrieval_ms': 0,
+                'total_cost_usd': 0.0,
+                'total_tokens': 0
             }
 
         stats = self.data['daily_stats'][today]
         stats['queries'] += 1
         stats['total_retrieval_ms'] += retrieval_time_ms
         stats['avg_retrieval_ms'] = stats['total_retrieval_ms'] / stats['queries']
+        stats['total_cost_usd'] += cost_usd
+        stats['total_tokens'] += tokens
 
         # Update system info
         self.data['system_info']['total_queries'] += 1
