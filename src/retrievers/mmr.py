@@ -1,5 +1,6 @@
 """Maximal Marginal Relevance (MMR) retrieval implementation."""
 
+import time
 from typing import Any, List
 
 import numpy as np
@@ -111,17 +112,23 @@ class MMRRetriever:
         Returns:
             List of diverse retrieval results
         """
-        query_embedding = self.embedder.embed_text(query)
+        start_time = time.time()
 
+        query_embedding = self.embedder.embed_text(query)
+        embed_time = time.time() - start_time
+
+        search_start = time.time()
         initial_candidates = self.vector_store.search(
             query_embedding,
             top_k=max(self.initial_k, top_k * 2),
             return_embeddings=True
         )
+        search_time = time.time() - search_start
 
         if not initial_candidates:
             return []
 
+        rerank_start = time.time()
         candidate_embeddings = np.array([c.metadata['embedding'] for c in initial_candidates], dtype=np.float32)
 
         mmr_results = mmr_select(
@@ -130,6 +137,15 @@ class MMRRetriever:
             candidates=initial_candidates,
             top_k=top_k,
             lambda_param=self.lambda_param,
+        )
+        rerank_time = time.time() - rerank_start
+
+        total_time = time.time() - start_time
+
+        logger.debug(
+            f"MMR retrieval: embed={embed_time*1000:.1f}ms, "
+            f"search={search_time*1000:.1f}ms, rerank={rerank_time*1000:.1f}ms, "
+            f"total={total_time*1000:.1f}ms"
         )
 
         return mmr_results
