@@ -1,5 +1,6 @@
 """Hybrid retriever combining vector and lexical search."""
 
+import time
 from typing import Any, Dict, List
 
 import numpy as np
@@ -118,11 +119,18 @@ class HybridRetriever:
         Returns:
             List of retrieval results with combined scores
         """
+        start_time = time.time()
+
         # Get results from both methods (retrieve more candidates)
         candidate_k = top_k * 3
 
+        lex_start = time.time()
         lexical_scores = self._lexical_search(query, candidate_k)
+        lex_time = time.time() - lex_start
+
+        vec_start = time.time()
         vector_scores = self._vector_search(query, candidate_k)
+        vec_time = time.time() - vec_start
 
         # Combine scores
         all_chunk_ids = set(lexical_scores.keys()) | set(vector_scores.keys())
@@ -176,5 +184,11 @@ class HybridRetriever:
                 )
                 results.append(result)
 
-        logger.debug(f"Hybrid search returned {len(results)} results")
+        total_time = time.time() - start_time
+
+        logger.debug(
+            f"Hybrid retrieval: lexical={lex_time*1000:.1f}ms, "
+            f"vector={vec_time*1000:.1f}ms, total={total_time*1000:.1f}ms"
+        )
+
         return results
