@@ -56,8 +56,6 @@ Visit `http://localhost:8501`
 
 ## Architecture
 
-LexBel follows a modular, clean architecture designed for maintainability and extensibility:
-
 
 ### Tech Stack
 
@@ -124,6 +122,21 @@ The system tracks and displays:
 - **Source diversity** (across legal codes)
 
 Analytics are saved to `data/metrics/` for continuous monitoring.
+
+
+
+### Langfuse Monitoring & Tracing
+
+
+** Dashboard**
+
+![Langfuse Dashboard](assets/langfuse_dashboard.png)
+
+track key metrics: query volumes, costs, tokens, latency metrics (P50/P95/P99).
+
+**🔍 Trace Visualization to track individual query**
+
+![Langfuse Tracing](assets/langfuse_tracing.png)
 
 ##  Development
 
