@@ -140,27 +140,25 @@ class LangChainQA:
                 },
                 tags=["rag", "legal", "qa"]
             )
-            trace_id = trace.id if trace else None
 
         retrieval_start = time.time()
         logger.info(f"Retrieving documents for question: {question[:100]}...")
 
         # Retrieval span
-        if tracer.enabled and trace_id:
-            retrieval_span = tracer.client.span(
-                trace_id=trace_id,
+        retrieval_span = None
+        if tracer.enabled and trace:
+            retrieval_span = trace.start_span(
                 name="retrieval",
-                input={"question": question, "top_k": top_k},
-                start_time=retrieval_start
+                input={"question": question, "top_k": top_k}
             )
 
         sources = self.retriever.retrieve(question, top_k=top_k)
         retrieval_duration = time.time() - retrieval_start
 
         # Update retrieval span
-        if tracer.enabled and trace_id:
+        if retrieval_span:
             avg_score = sum(s.score for s in sources) / len(sources) if sources else 0
-            retrieval_span.end(
+            retrieval_span.update(
                 output={
                     "num_sources": len(sources),
                     "sources": [s.reference for s in sources],
@@ -171,6 +169,7 @@ class LangChainQA:
                     "retriever": type(self.retriever).__name__
                 }
             )
+            retrieval_span.end()
 
         if not sources:
             response = QueryResponse(
@@ -211,10 +210,10 @@ class LangChainQA:
             output_tokens = estimate_tokens(answer)
             cost_info = calculate_cost(self.model_name, input_tokens, output_tokens)
 
-            # Track generation
-            if tracer.enabled and trace_id:
-                tracer.client.generation(
-                    trace_id=trace_id,
+            # Track generation - let Langfuse calculate cost from token usage
+            if tracer.enabled and trace:
+                generation = trace.start_observation(
+                    as_type='generation',
                     name="llm_generation",
                     model=self.model_name,
                     input=[
@@ -222,36 +221,31 @@ class LangChainQA:
                         {"role": "user", "content": f"Context: {context[:200]}...\n\nQuestion: {question}"}
                     ],
                     output=answer,
-                    usage={
-                        "input": input_tokens,
-                        "output": output_tokens,
-                        "total": input_tokens + output_tokens,
-                        "unit": "TOKENS"
+                    usage_details={
+                        "input_tokens": input_tokens,
+                        "output_tokens": output_tokens,
+                        "total_tokens": input_tokens + output_tokens
                     },
                     metadata={
-                        "duration_ms": generation_duration * 1000,
-                        "cost_usd": cost_info["total_cost"],
-                        "input_cost_usd": cost_info["input_cost"],
-                        "output_cost_usd": cost_info["output_cost"]
-                    },
-                    start_time=generation_start,
-                    end_time=time.time()
+                        "duration_ms": generation_duration * 1000
+                    }
                 )
+                generation.end()
 
         except Exception as e:
             logger.error(f"LLM generation failed: {e}")
             answer = f"Erreur lors de la génération de la réponse: {e}"
             cost_info = {"total_cost": 0}
 
-            if tracer.enabled and trace_id:
-                tracer.client.span(
-                    trace_id=trace_id,
+            if tracer.enabled and trace:
+                error_span = trace.start_span(
                     name="llm_error",
                     input={"question": question},
                     output={"error": str(e)},
                     metadata={"error_type": type(e).__name__},
                     level="ERROR"
                 )
+                error_span.end()
 
         # Build response
         response = QueryResponse(
@@ -280,6 +274,7 @@ class LangChainQA:
                     "retrieval_duration_ms": retrieval_duration * 1000
                 }
             )
+            trace.end()
             tracer.flush()
 
         logger.info("Query completed successfully")
