@@ -60,19 +60,24 @@ class LangfuseTracer:
         metadata: Optional[Dict] = None,
         tags: Optional[List[str]] = None
     ):
-        """Create a new trace."""
+        """Create a new trace by starting a span."""
         if not self.enabled:
             return None
 
         try:
-            trace = self.client.trace(
+            # In Langfuse 3.x, start_span creates a trace automatically
+            trace_metadata = metadata or {}
+            if session_id:
+                trace_metadata['session_id'] = session_id
+            if user_id:
+                trace_metadata['user_id'] = user_id
+            
+            span = self.client.start_span(
                 name=name,
-                user_id=user_id or "anonymous",
-                session_id=session_id,
-                metadata=metadata or {},
-                tags=tags or []
+                metadata=trace_metadata
             )
-            return trace
+            # Return the span object which contains trace_id
+            return span
         except Exception as e:
             logger.error(f"Failed to create trace: {e}")
             return None
@@ -85,22 +90,11 @@ class LangfuseTracer:
         metadata: Optional[Dict] = None,
         start_time: Optional[float] = None
     ):
-        """Create a span within a trace."""
-        if not self.enabled:
-            return None
-
-        try:
-            span = self.client.span(
-                trace_id=trace_id,
-                name=name,
-                input=input_data,
-                metadata=metadata or {},
-                start_time=start_time
-            )
-            return span
-        except Exception as e:
-            logger.error(f"Failed to create span: {e}")
-            return None
+        """Create a span within a trace - DEPRECATED, use trace.start_span() instead."""
+        # This method is kept for backward compatibility but should not be used
+        # Instead, use the returned span object from create_trace()
+        logger.warning("create_span() is deprecated. Use span.start_span() instead.")
+        return None
 
     def create_generation(
         self,
@@ -114,26 +108,11 @@ class LangfuseTracer:
         start_time: Optional[float] = None,
         end_time: Optional[float] = None
     ):
-        """Track LLM generation with token usage."""
-        if not self.enabled:
-            return None
-
-        try:
-            generation = self.client.generation(
-                trace_id=trace_id,
-                name=name,
-                model=model,
-                input=input_data,
-                output=output_data,
-                metadata=metadata or {},
-                usage=usage,
-                start_time=start_time,
-                end_time=end_time
-            )
-            return generation
-        except Exception as e:
-            logger.error(f"Failed to create generation: {e}")
-            return None
+        """Track LLM generation - DEPRECATED, use span.start_generation() instead."""
+        # This method is kept for backward compatibility but should not be used
+        # Instead, use the span object from create_trace()
+        logger.warning("create_generation() is deprecated. Use span.start_generation() instead.")
+        return None
 
     def flush(self):
         """Flush pending events to Langfuse."""
