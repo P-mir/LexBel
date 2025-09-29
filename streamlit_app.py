@@ -16,10 +16,9 @@ sys.path.insert(0, str(Path(__file__).parent / "src"))
 from analytics.metrics import LexBelAnalytics
 from chains import LangChainQA
 from embeddings import CloudEmbedder
-from observability import LangfuseAnalytics, generate_session_id, get_tracer
+from observability import generate_session_id, get_tracer
 from retrievers import HybridRetriever, MMRRetriever
 from ui.dashboard import render_dashboard
-from ui.langfuse_dashboard import render_langfuse_dashboard
 from ui.styling import get_custom_css
 from utils.helpers import load_json
 from utils.logging_config import setup_logger
@@ -144,7 +143,7 @@ def main():
 
         page = st.radio(
             "Navigation",
-            options=["🔍 Recherche", "📊 Tableau de Bord", "🔍 Langfuse Monitoring"],
+            options=["🔍 Recherche", "📊 Tableau de Bord"],
             label_visibility="collapsed"
         )
 
@@ -153,11 +152,6 @@ def main():
     # Main content based on page selection
     if page == "📊 Tableau de Bord":
         render_dashboard(analytics.get_dashboard_stats())
-        return
-
-    if page == "🔍 Langfuse Monitoring":
-        langfuse_analytics = LangfuseAnalytics()
-        render_langfuse_dashboard(langfuse_analytics.get_dashboard_stats())
         return
 
     # Search page

@@ -3,8 +3,8 @@ from typing import Dict
 # Mistral API pricing (per million tokens)
 MISTRAL_PRICING = {
     "mistral-small-latest": {
-        "input": 1000,   #  per M tokens, I fake it here (*1000 wrt real values) to compensate for low volume, and make the numbers more realistic
-        "output": 3000,
+        "input": 10,   #  per M tokens, I fake it here (*10 wrt real values) to compensate for low volume, and make the numbers more realistic
+        "output": 30,
     }
     # Add other models as needed
 }
