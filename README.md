@@ -42,6 +42,7 @@ cd LexBel
 # Set up your environment
 cp .env.example .env
 # Edit .env and add your MISTRAL_API_KEY
+# Optional -> LANGFUSE keys for monitoring
 
 # Launch with Docker Compose
 docker-compose up
@@ -50,7 +51,8 @@ docker-compose up
 Visit `http://localhost:8501`
 
 
----
+
+
 
 ## Architecture
 
@@ -66,6 +68,7 @@ LexBel follows a modular, clean architecture designed for maintainability and ex
   - **Hybrid search** combining dense vectors + BM25 lexical matching
 - `LangChain` & `LlamaIndex` — RAG orchestration
 - `Mistral AI` — LLM for answer generation (mistral-small-latest)
+- `Langfuse` — observability and tracing
 
 **Application Layer:**
 - `Streamlit` — Interactive web interface
@@ -121,8 +124,6 @@ The system tracks and displays:
 - **Source diversity** (across legal codes)
 
 Analytics are saved to `data/metrics/` for continuous monitoring.
-
-
 
 ##  Development
 
