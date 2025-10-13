@@ -44,9 +44,4 @@ jobs:
           LANGFUSE_PUBLIC_KEY: ${{ secrets.LANGFUSE_PUBLIC_KEY }}
           LANGFUSE_HOST: ${{ secrets.LANGFUSE_HOST }}
         run: |
-          uv run pytest tests/ -v --tb=short --ignore=tests/test_mmr.py
-      
-      - name: Run MMR tests (allowed to fail)
-        continue-on-error: true
-        run: |
-          uv run pytest tests/test_mmr.py -v --tb=short
+          uv run pytest tests/ -v --tb=short
