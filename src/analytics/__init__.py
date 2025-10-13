@@ -1,3 +1,3 @@
 from analytics.metrics import LexBelAnalytics
 
-__all__ = ['LexBelAnalytics']
+__all__ = ["LexBelAnalytics"]

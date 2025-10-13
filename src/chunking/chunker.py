@@ -1,4 +1,3 @@
-
 from typing import List
 
 import nltk
@@ -11,7 +10,6 @@ logger = setup_logger(__name__)
 
 
 class TextChunker:
-
     def __init__(
         self,
         chunk_size: int = 500,
@@ -26,17 +24,17 @@ class TextChunker:
 
         # Download NLTK data if needed
         try:
-            nltk.data.find('tokenizers/punkt')
+            nltk.data.find("tokenizers/punkt")
         except LookupError:
             logger.info("Downloading NLTK punkt tokenizer...")
-            nltk.download('punkt', quiet=True)
+            nltk.download("punkt", quiet=True)
 
         # Add French sentence tokenizer
         try:
-            nltk.data.find('tokenizers/punkt/french.pickle')
+            nltk.data.find("tokenizers/punkt/french.pickle")
         except LookupError:
             logger.info("Downloading French NLTK data...")
-            nltk.download('punkt', quiet=True)
+            nltk.download("punkt", quiet=True)
 
     def chunk_article(self, article: LegalArticle) -> List[TextChunk]:
         """LangChain chuncker can be limiting..."""
@@ -61,9 +59,11 @@ class TextChunker:
 
             # If adding this sentence exceeds chunk size, save current chunk
             if current_length + sentence_length > self.chunk_size and current_chunk:
-                chunk_text = ' '.join(current_chunk)
+                chunk_text = " ".join(current_chunk)
                 char_end = char_start + len(chunk_text)
-                chunks.append(self._create_chunk(article, chunk_text, char_start, char_end, chunk_idx))
+                chunks.append(
+                    self._create_chunk(article, chunk_text, char_start, char_end, chunk_idx)
+                )
                 chunk_idx += 1
 
                 # Start new chunk with overlap
@@ -79,7 +79,7 @@ class TextChunker:
 
                 # Update char_start to reflect the overlap
                 if overlap_sentences:
-                    overlap_text = ' '.join(overlap_sentences)
+                    overlap_text = " ".join(overlap_sentences)
                     char_start = char_end - len(overlap_text)
                     current_chunk = overlap_sentences
                     current_length = overlap_chars
@@ -94,7 +94,7 @@ class TextChunker:
 
         # Add final chunk if any
         if current_chunk:
-            chunk_text = ' '.join(current_chunk)
+            chunk_text = " ".join(current_chunk)
             char_end = char_start + len(chunk_text)
             chunks.append(self._create_chunk(article, chunk_text, char_start, char_end, chunk_idx))
 
@@ -135,13 +135,13 @@ class TextChunker:
             char_start=char_start,
             char_end=char_end,
             metadata={
-                'law_type': article.law_type,
-                'part': article.part,
-                'act': article.act,
-                'subsection': article.subsection,
-                'description': article.description,
-                'chunk_index': chunk_idx,
-            }
+                "law_type": article.law_type,
+                "part": article.part,
+                "act": article.act,
+                "subsection": article.subsection,
+                "description": article.description,
+                "chunk_index": chunk_idx,
+            },
         )
 
     def chunk_articles(self, articles: List[LegalArticle]) -> List[TextChunk]:
@@ -158,11 +158,12 @@ class TextChunker:
 
         for i, article in enumerate(articles):
             if i % 5000 == 0 and i > 0:
-                logger.info(f"Chunking progress: {i}/{total} articles ({len(all_chunks)} chunks so far)")
+                logger.info(
+                    f"Chunking progress: {i}/{total} articles ({len(all_chunks)} chunks so far)"
+                )
 
             chunks = self.chunk_article(article)
             all_chunks.extend(chunks)
 
         logger.info(f"Chunked {len(articles)} articles into {len(all_chunks)} chunks")
         return all_chunks
-

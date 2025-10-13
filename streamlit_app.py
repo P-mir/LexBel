@@ -1,29 +1,27 @@
-
 import base64
 import sys
 import time
 from pathlib import Path
 
+import streamlit as st
 from dotenv import load_dotenv
 
 load_dotenv()
 
-import streamlit as st
-
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
-from analytics.metrics import LexBelAnalytics
-from chains import LangChainQA
-from embeddings import CloudEmbedder
-from observability import generate_session_id, get_tracer
-from retrievers import HybridRetriever, MMRRetriever
-from ui.dashboard import render_dashboard
-from ui.styling import get_custom_css
-from utils.helpers import load_json
-from utils.logging_config import setup_logger
-from utils.models import TextChunk
-from vector_store import FAISSVectorStore
+from analytics.metrics import LexBelAnalytics  # noqa: E402
+from chains import LangChainQA  # noqa: E402
+from embeddings import CloudEmbedder  # noqa: E402
+from observability import generate_session_id, get_tracer  # noqa: E402
+from retrievers import HybridRetriever, MMRRetriever  # noqa: E402
+from ui.dashboard import render_dashboard  # noqa: E402
+from ui.styling import get_custom_css  # noqa: E402
+from utils.helpers import load_json  # noqa: E402
+from utils.logging_config import setup_logger  # noqa: E402
+from utils.models import TextChunk  # noqa: E402
+from vector_store import FAISSVectorStore  # noqa: E402
 
 logger = setup_logger(__name__)
 
@@ -44,6 +42,7 @@ def load_logo() -> str:
             return base64.b64encode(f.read()).decode()
     return ""
 
+
 @st.cache_resource
 def load_system(vector_store_dir: str, retriever_type: str):
     """Load and cache the RAG system."""
@@ -51,7 +50,7 @@ def load_system(vector_store_dir: str, retriever_type: str):
 
     # Load config
     config = load_json(vector_store_path / "config.json")
-    embedding_dim = config['embedding_dim']
+    embedding_dim = config["embedding_dim"]
 
     embedder = CloudEmbedder(model_name="mistral-embed", batch_size=100)
 
@@ -66,7 +65,7 @@ def load_system(vector_store_dir: str, retriever_type: str):
         retriever = MMRRetriever(
             vector_store=vector_store,
             embedder=embedder,
-            lambda_param=st.session_state.get('mmr_lambda', 0.5),
+            lambda_param=st.session_state.get("mmr_lambda", 0.5),
             initial_k=50,
         )
     else:
@@ -74,10 +73,11 @@ def load_system(vector_store_dir: str, retriever_type: str):
             vector_store=vector_store,
             embedder=embedder,
             chunks=chunks,
-            alpha=st.session_state.get('hybrid_alpha', 0.7),
+            alpha=st.session_state.get("hybrid_alpha", 0.7),
         )
 
     return retriever, embedder, vector_store, chunks, config
+
 
 @st.cache_resource
 def load_analytics():
@@ -92,7 +92,7 @@ def main():
     analytics = load_analytics()
 
     # Initialize session state
-    if 'session_id' not in st.session_state:
+    if "session_id" not in st.session_state:
         st.session_state.session_id = generate_session_id()
         logger.info(f"New session started: {st.session_state.session_id}")
 
@@ -101,7 +101,8 @@ def main():
     if tracer.enabled:
         logger.info("Langfuse tracing enabled")
 
-    st.markdown("""
+    st.markdown(
+        """
     <style>
     section[data-testid="stSidebar"] {
         display: block !important;
@@ -120,31 +121,39 @@ def main():
         display: none !important;
     }
     </style>
-    """, unsafe_allow_html=True)
+    """,
+        unsafe_allow_html=True,
+    )
 
     with st.sidebar:
         logo_b64 = load_logo()
         if logo_b64:
-            st.markdown(f"""
+            st.markdown(
+                f"""
             <div class="lexbel-logo-container">
                 <img src="data:image/png;base64,{logo_b64}" class="lexbel-logo" alt="LexBel"/>
                 <div class="lexbel-tagline">Intelligence Juridique Belge</div>
             </div>
-            """, unsafe_allow_html=True)
+            """,
+                unsafe_allow_html=True,
+            )
         else:
-            st.markdown("""
+            st.markdown(
+                """
             <div class="lexbel-logo-container">
                 <h1 style="color: var(--lexbel-accent); margin: 0;">LexBel</h1>
                 <div class="lexbel-tagline">Intelligence Juridique Belge</div>
             </div>
-            """, unsafe_allow_html=True)
+            """,
+                unsafe_allow_html=True,
+            )
 
         st.markdown("### ⚙️ Configuration")
 
         page = st.radio(
             "Navigation",
             options=["🔍 Recherche", "📊 Tableau de Bord"],
-            label_visibility="collapsed"
+            label_visibility="collapsed",
         )
 
         st.markdown("---")
@@ -168,13 +177,12 @@ def main():
         - Quels services existent pour les personnes handicapées en Wallonie ?
         """)
 
-
     question = st.text_area(
         "Votre Question",
         height=120,
         placeholder="Posez votre question sur le droit belge...",
         label_visibility="collapsed",
-        max_chars=1000
+        max_chars=1000,
     )
 
     if question:
@@ -234,7 +242,7 @@ def main():
                 step=0.1,
                 help="0.0 = diversité max | 1.0 = pertinence max",
             )
-            st.session_state['mmr_lambda'] = mmr_lambda
+            st.session_state["mmr_lambda"] = mmr_lambda
         else:
             hybrid_alpha = st.slider(
                 "Hybrid Alpha (α)",
@@ -244,7 +252,7 @@ def main():
                 step=0.1,
                 help="0.0 = lexical pur | 1.0 = vectoriel pur",
             )
-            st.session_state['hybrid_alpha'] = hybrid_alpha
+            st.session_state["hybrid_alpha"] = hybrid_alpha
 
         st.markdown("---")
 
@@ -255,35 +263,39 @@ def main():
     try:
         with loading_placeholder:
             with st.spinner("⏳ Chargement du système..."):
-                retriever, _, _, _, config = load_system(
-                    vector_store_dir, retriever_type
-                )
+                retriever, _, _, _, config = load_system(vector_store_dir, retriever_type)
 
         loading_placeholder.empty()
 
         with stats_placeholder:
-            st.markdown(f"""
+            st.markdown(
+                f"""
             <div style="display: flex; justify-content: space-around; margin: 1rem 0;">
                 <div style="text-align: center;">
                     <div style="font-size: 0.9rem; color: rgba(255,255,255,0.8); margin-bottom: 0.25rem;">Articles</div>
-                    <div style="font-size: 1.5rem; font-weight: bold; color: white;">{config.get('num_articles', 'N/A'):,}</div>
+                    <div style="font-size: 1.5rem; font-weight: bold; color: white;">{config.get("num_articles", "N/A"):,}</div>
                 </div>
                 <div style="text-align: center;">
                     <div style="font-size: 0.9rem; color: rgba(255,255,255,0.8); margin-bottom: 0.25rem;">Chunks</div>
-                    <div style="font-size: 1.5rem; font-weight: bold; color: white;">{config.get('num_chunks', 'N/A'):,}</div>
+                    <div style="font-size: 1.5rem; font-weight: bold; color: white;">{config.get("num_chunks", "N/A"):,}</div>
                 </div>
             </div>
-            """, unsafe_allow_html=True)
+            """,
+                unsafe_allow_html=True,
+            )
 
         with st.sidebar:
             st.markdown("---")
-            st.markdown("""
+            st.markdown(
+                """
             <div style="text-align: center; font-size: 0.75rem; margin-top: 2rem;">
                 <a href="mailto:ptrk.miro@gmail.com" style="color: white; text-decoration: none; opacity: 0.7; transition: opacity 0.3s;">
                     📧 ptrk.miro@gmail.com
                 </a>
             </div>
-            """, unsafe_allow_html=True)
+            """,
+                unsafe_allow_html=True,
+            )
 
     except Exception as e:
         loading_placeholder.empty()
@@ -295,7 +307,9 @@ def main():
         # Validate token limit
         token_estimate = len(question) // 4
         if token_estimate > 1000:
-            st.error("❌ Question trop longue. Veuillez réduire à maximum 1000 tokens (~4000 caractères).")
+            st.error(
+                "❌ Question trop longue. Veuillez réduire à maximum 1000 tokens (~4000 caractères)."
+            )
             return
 
         with st.spinner("Traitement de votre requête..."):
@@ -312,14 +326,18 @@ def main():
                         retriever_type=retriever_type,
                         num_results=len(sources),
                         retrieval_time_ms=retrieval_time_ms,
-                        sources=[s.reference for s in sources]
+                        sources=[s.reference for s in sources],
                     )
 
                     st.markdown("## 📚 Documents Récupérés")
-                    st.success(f"**{len(sources)} articles** trouvés en **{retrieval_time_ms:.0f}ms**")
+                    st.success(
+                        f"**{len(sources)} articles** trouvés en **{retrieval_time_ms:.0f}ms**"
+                    )
 
                     for i, source in enumerate(sources, 1):
-                        with st.expander(f"📄 **Source {i}** - {source.reference} (Score: {source.score:.3f})"):
+                        with st.expander(
+                            f"📄 **Source {i}** - {source.reference} (Score: {source.score:.3f})"
+                        ):
                             st.markdown("**Texte:**")
                             st.markdown(f"*{source.text}*")
 
@@ -327,15 +345,15 @@ def main():
                             with col1:
                                 st.markdown(f"**Article ID:** `{source.article_id}`")
                                 st.markdown(f"**Code:** `{source.code}`")
-                                if source.metadata.get('book'):
+                                if source.metadata.get("book"):
                                     st.markdown(f"**Livre:** {source.metadata['book']}")
                             with col2:
-                                if source.metadata.get('chapter'):
+                                if source.metadata.get("chapter"):
                                     st.markdown(f"**Chapitre:** {source.metadata['chapter']}")
-                                if source.metadata.get('section'):
+                                if source.metadata.get("section"):
                                     st.markdown(f"**Section:** {source.metadata['section']}")
 
-                            if 'vector_score' in source.metadata:
+                            if "vector_score" in source.metadata:
                                 st.markdown("**Scores Détaillés:**")
                                 c1, c2 = st.columns(2)
                                 with c1:
@@ -350,9 +368,7 @@ def main():
                     )
 
                     response = qa_chain.query(
-                        question,
-                        top_k=top_k,
-                        session_id=st.session_state.session_id
+                        question, top_k=top_k, session_id=st.session_state.session_id
                     )
                     total_time_ms = (time.time() - start_time) * 1000
 
@@ -363,16 +379,19 @@ def main():
                         num_results=len(response.sources),
                         retrieval_time_ms=total_time_ms,
                         sources=[s.reference for s in response.sources],
-                        cost_usd=response.retrieval_details.get('cost_usd', 0.0),
-                        tokens=response.retrieval_details.get('total_tokens', 0)
+                        cost_usd=response.retrieval_details.get("cost_usd", 0.0),
+                        tokens=response.retrieval_details.get("total_tokens", 0),
                     )
 
                     st.markdown("## 💡 Réponse")
-                    st.markdown(f"""
+                    st.markdown(
+                        f"""
                     <div class="dashboard-card">
                         {response.answer}
                     </div>
-                    """, unsafe_allow_html=True)
+                    """,
+                        unsafe_allow_html=True,
+                    )
 
                     col_time, col_sources, col_cost = st.columns(3)
                     with col_time:
@@ -380,16 +399,20 @@ def main():
                     with col_sources:
                         st.metric("Sources Utilisées", len(response.sources))
                     with col_cost:
-                        cost_usd = response.retrieval_details.get('cost_usd', 0)
+                        cost_usd = response.retrieval_details.get("cost_usd", 0)
                         if cost_usd > 0:
                             st.metric("Coût", f"${cost_usd:.4f}")
                         else:
-                            st.metric("Tokens", response.retrieval_details.get('total_tokens', 'N/A'))
+                            st.metric(
+                                "Tokens", response.retrieval_details.get("total_tokens", "N/A")
+                            )
 
                     st.markdown("## 📚 Sources")
 
                     for i, source in enumerate(response.sources, 1):
-                        with st.expander(f"📄 **Source {i}** - {source.reference} (Score: {source.score:.3f})"):
+                        with st.expander(
+                            f"📄 **Source {i}** - {source.reference} (Score: {source.score:.3f})"
+                        ):
                             st.markdown("**Texte:**")
                             st.markdown(f"*{source.text}*")
 
@@ -397,15 +420,15 @@ def main():
                             with col1:
                                 st.markdown(f"**Article ID:** `{source.article_id}`")
                                 st.markdown(f"**Code:** `{source.code}`")
-                                if source.metadata.get('book'):
+                                if source.metadata.get("book"):
                                     st.markdown(f"**Livre:** {source.metadata['book']}")
                             with col2:
-                                if source.metadata.get('chapter'):
+                                if source.metadata.get("chapter"):
                                     st.markdown(f"**Chapitre:** {source.metadata['chapter']}")
-                                if source.metadata.get('section'):
+                                if source.metadata.get("section"):
                                     st.markdown(f"**Section:** {source.metadata['section']}")
 
-                            if 'vector_score' in source.metadata:
+                            if "vector_score" in source.metadata:
                                 st.markdown("**Scores:**")
                                 col1, col2, col3 = st.columns(3)
                                 with col1:
@@ -438,7 +461,8 @@ def main():
                 logger.error(f"Query error: {e}", exc_info=True)
 
     # Footer
-    st.markdown("""
+    st.markdown(
+        """
     <div class="lexbel-footer">
         <strong>LexBel</strong> - Intelligence Juridique Belge<br/>
         Système RAG avancé pour le droit belge<br/>
@@ -446,7 +470,9 @@ def main():
             📧 ptrk.miro@gmail.com
         </a>
     </div>
-    """, unsafe_allow_html=True)
+    """,
+        unsafe_allow_html=True,
+    )
 
 
 if __name__ == "__main__":

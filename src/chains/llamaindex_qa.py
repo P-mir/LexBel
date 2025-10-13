@@ -1,4 +1,3 @@
-
 from typing import List, Optional
 
 from llama_index.core import Document, ServiceContext, VectorStoreIndex
@@ -55,13 +54,13 @@ class LlamaIndexQA:
             doc = Document(
                 text=chunk.original_text,
                 metadata={
-                    'chunk_id': chunk.chunk_id,
-                    'article_id': chunk.article_id,
-                    'reference': chunk.reference,
-                    'code': chunk.code,
-                    'book': chunk.book or '',
-                    'chapter': chunk.chapter or '',
-                    'section': chunk.section or '',
+                    "chunk_id": chunk.chunk_id,
+                    "article_id": chunk.article_id,
+                    "reference": chunk.reference,
+                    "code": chunk.code,
+                    "book": chunk.book or "",
+                    "chapter": chunk.chapter or "",
+                    "section": chunk.section or "",
                     **chunk.metadata,
                 },
             )
@@ -89,17 +88,17 @@ class LlamaIndexQA:
             response = self.query_engine.query(question)
 
             sources = []
-            if hasattr(response, 'source_nodes'):
+            if hasattr(response, "source_nodes"):
                 for node in response.source_nodes:
                     metadata = node.node.metadata
                     result = RetrievalResult(
-                        chunk_id=metadata.get('chunk_id', ''),
+                        chunk_id=metadata.get("chunk_id", ""),
                         text=node.node.text,
-                        score=node.score if hasattr(node, 'score') else 0.0,
+                        score=node.score if hasattr(node, "score") else 0.0,
                         metadata=metadata,
-                        article_id=metadata.get('article_id', 0),
-                        reference=metadata.get('reference', ''),
-                        code=metadata.get('code', ''),
+                        article_id=metadata.get("article_id", 0),
+                        reference=metadata.get("reference", ""),
+                        code=metadata.get("code", ""),
                     )
                     sources.append(result)
 

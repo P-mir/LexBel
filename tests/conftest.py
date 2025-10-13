@@ -1,4 +1,3 @@
-
 import sys
 from pathlib import Path
 
@@ -11,5 +10,5 @@ def pytest_addoption(parser):
         "--run-cloud",
         action="store_true",
         default=False,
-        help="Run tests that require cloud API (OpenAI)"
+        help="Run tests that require cloud API (OpenAI)",
     )
