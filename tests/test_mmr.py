@@ -1,4 +1,3 @@
-
 import numpy as np
 import pytest
 
@@ -7,7 +6,6 @@ from utils.models import RetrievalResult
 
 
 class TestMMR:
-
     @pytest.fixture
     def sample_data(self):
         # Query embedding
@@ -15,11 +13,14 @@ class TestMMR:
         query = query / np.linalg.norm(query)
 
         # Candidate embeddings (3 candidates)
-        candidates_emb = np.array([
-            [0.9, 0.1, 0.0],  # Very similar to query
-            [0.9, 0.05, 0.05],  # Very similar to query AND first candidate
-            [0.0, 1.0, 0.0],  # Different from query
-        ], dtype=np.float32)
+        candidates_emb = np.array(
+            [
+                [0.9, 0.1, 0.0],  # Very similar to query
+                [0.9, 0.05, 0.05],  # Very similar to query AND first candidate
+                [0.0, 1.0, 0.0],  # Different from query
+            ],
+            dtype=np.float32,
+        )
         candidates_emb = candidates_emb / np.linalg.norm(candidates_emb, axis=1, keepdims=True)
 
         # Candidate results

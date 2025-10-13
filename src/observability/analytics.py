@@ -20,10 +20,11 @@ class LangfuseAnalytics:
         if secret_key and public_key:
             try:
                 from langfuse import Langfuse
+
                 self.client = Langfuse(
                     secret_key=secret_key,
                     public_key=public_key,
-                    host=os.getenv("LANGFUSE_HOST", "https://cloud.langfuse.com")
+                    host=os.getenv("LANGFUSE_HOST", "https://cloud.langfuse.com"),
                 )
                 self.enabled = True
                 logger.info("Langfuse analytics initialized")
@@ -62,7 +63,7 @@ class LangfuseAnalytics:
                 "queries_per_day": [],
                 "cost_per_day": [],
                 "latencies": [],
-                "enabled": True
+                "enabled": True,
             }
 
             return stats
@@ -86,7 +87,7 @@ class LangfuseAnalytics:
             "queries_per_day": [],
             "cost_per_day": [],
             "latencies": [],
-            "enabled": False
+            "enabled": False,
         }
 
     def calculate_percentiles(self, latencies: List[float]) -> Dict[str, float]:
@@ -97,5 +98,5 @@ class LangfuseAnalytics:
         return {
             "p50": float(np.percentile(latencies, 50)),
             "p95": float(np.percentile(latencies, 95)),
-            "p99": float(np.percentile(latencies, 99))
+            "p99": float(np.percentile(latencies, 99)),
         }
