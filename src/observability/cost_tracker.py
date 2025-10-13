@@ -3,7 +3,7 @@ from typing import Dict
 # Mistral API pricing (per million tokens)
 MISTRAL_PRICING = {
     "mistral-small-latest": {
-        "input": 10,   #  per M tokens, I fake it here (*10 wrt real values) to compensate for low volume, and make the numbers more realistic
+        "input": 10,  #  per M tokens, I fake it here (*10 wrt real values) to compensate for low volume, and make the numbers more realistic
         "output": 30,
     }
     # Add other models as needed
@@ -15,14 +15,10 @@ def estimate_tokens(text: str) -> int:
     return len(text) // 4
 
 
-def calculate_cost(
-    model: str,
-    input_tokens: int,
-    output_tokens: int
-) -> Dict[str, float]:
+def calculate_cost(model: str, input_tokens: int, output_tokens: int) -> Dict[str, float]:
     """Calculate cost for Mistral API call.
-        Returns:
-        Dict with input_cost, output_cost, total_cost in USD
+    Returns:
+    Dict with input_cost, output_cost, total_cost in USD
     """
     pricing = MISTRAL_PRICING["mistral-small-latest"]
 

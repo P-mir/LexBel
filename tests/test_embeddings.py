@@ -1,4 +1,3 @@
-
 import numpy as np
 import pytest
 
@@ -6,7 +5,6 @@ from embeddings import CloudEmbedder, LocalEmbedder
 
 
 class TestLocalEmbedder:
-
     def test_initialization(self):
         embedder = LocalEmbedder(device="cpu")
         assert embedder.get_embedding_dim() > 0
@@ -50,8 +48,8 @@ class TestCloudEmbedder:
     """Tests for CloudEmbedder (uses Mistral API, requires API key)."""
 
     @pytest.mark.skipif(
-        not pytest.config.getoption("--run-cloud"),
-        reason="Requires --run-cloud flag and MISTRAL_API_KEY"
+        "not config.getoption('--run-cloud')",
+        reason="Requires --run-cloud flag and MISTRAL_API_KEY",
     )
     def test_embed_text(self):
         """Test cloud embedding with Mistral (skipped without API key)."""
@@ -70,8 +68,5 @@ class TestCloudEmbedder:
 def pytest_addoption(parser):
     """Add custom command line options."""
     parser.addoption(
-        "--run-cloud",
-        action="store_true",
-        default=False,
-        help="Run tests that require cloud API"
+        "--run-cloud", action="store_true", default=False, help="Run tests that require cloud API"
     )

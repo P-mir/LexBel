@@ -1,4 +1,3 @@
-
 import argparse
 import sys
 import time
@@ -21,31 +20,30 @@ logger = setup_logger(__name__, log_file=Path("logs/ingestion.log"))
 
 
 def load_articles(csv_path: Path) -> list[LegalArticle]:
-
     logger.info(f"Loading articles from {csv_path}...")
     df = pd.read_csv(csv_path)
     logger.info(f"Read {len(df)} rows from CSV")
 
     articles = []
-    records = df.to_dict('records')
+    records = df.to_dict("records")
 
     for i, row in enumerate(records):
         if i % 5000 == 0 and i > 0:
             logger.info(f"Processing article {i}/{len(records)}...")
 
         article = LegalArticle(
-            id=int(row['id']),
-            reference=str(row['reference']),
-            article=str(row['article']),
-            law_type=str(row['law_type']),
-            code=str(row['code']),
-            book=str(row['book']) if pd.notna(row['book']) else None,
-            part=str(row['part']) if pd.notna(row['part']) else None,
-            act=str(row['act']) if pd.notna(row['act']) else None,
-            chapter=str(row['chapter']) if pd.notna(row['chapter']) else None,
-            section=str(row['section']) if pd.notna(row['section']) else None,
-            subsection=str(row['subsection']) if pd.notna(row['subsection']) else None,
-            description=str(row['description']) if pd.notna(row['description']) else None,
+            id=int(row["id"]),
+            reference=str(row["reference"]),
+            article=str(row["article"]),
+            law_type=str(row["law_type"]),
+            code=str(row["code"]),
+            book=str(row["book"]) if pd.notna(row["book"]) else None,
+            part=str(row["part"]) if pd.notna(row["part"]) else None,
+            act=str(row["act"]) if pd.notna(row["act"]) else None,
+            chapter=str(row["chapter"]) if pd.notna(row["chapter"]) else None,
+            section=str(row["section"]) if pd.notna(row["section"]) else None,
+            subsection=str(row["subsection"]) if pd.notna(row["subsection"]) else None,
+            description=str(row["description"]) if pd.notna(row["description"]) else None,
         )
         articles.append(article)
 
@@ -96,7 +94,9 @@ def main(
         logger.info("Initializing Mistral embedder...")
         embedder = CloudEmbedder(model_name="mistral-embed", batch_size=100)
     else:
-        raise ValueError(f"Unknown embedder type: {embedder_type}. Choose 'local', 'cloud', or 'mistral'")
+        raise ValueError(
+            f"Unknown embedder type: {embedder_type}. Choose 'local', 'cloud', or 'mistral'"
+        )
 
     embedding_dim = embedder.get_embedding_dim()
     logger.info(f"Embedding dimension: {embedding_dim}")
@@ -114,24 +114,27 @@ def main(
     vector_store.persist(output_path)
 
     config = {
-        'embedder_type': embedder_type,
-        'embedding_dim': embedding_dim,
-        'chunk_size': chunk_size,
-        'chunk_overlap': chunk_overlap,
-        'num_articles': len(articles),
-        'num_chunks': len(chunks),
-        'timestamp': datetime.now().isoformat(),
+        "embedder_type": embedder_type,
+        "embedding_dim": embedding_dim,
+        "chunk_size": chunk_size,
+        "chunk_overlap": chunk_overlap,
+        "num_articles": len(articles),
+        "num_chunks": len(chunks),
+        "timestamp": datetime.now().isoformat(),
     }
     save_json(config, output_path / "config.json")
 
     # Update metrics
     elapsed_time = time.time() - start_time
     metrics_path = Path("data/metrics/metrics.json")
-    update_metrics(metrics_path, {
-        'ingested_docs': len(articles),
-        'chunks': len(chunks),
-        'last_ingestion_time_seconds': elapsed_time,
-    })
+    update_metrics(
+        metrics_path,
+        {
+            "ingested_docs": len(articles),
+            "chunks": len(chunks),
+            "last_ingestion_time_seconds": elapsed_time,
+        },
+    )
 
     logger.info(f"Ingestion completed in {elapsed_time:.2f} seconds")
     logger.info(f"Vector store saved to {output_path}")
