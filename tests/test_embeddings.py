@@ -47,12 +47,11 @@ class TestLocalEmbedder:
 class TestCloudEmbedder:
     """Tests for CloudEmbedder (uses Mistral API, requires API key)."""
 
-    @pytest.mark.skipif(
-        "not config.getoption('--run-cloud')",
-        reason="Requires --run-cloud flag and MISTRAL_API_KEY",
-    )
-    def test_embed_text(self):
+    @pytest.mark.cloud
+    def test_embed_text(self, request):
         """Test cloud embedding with Mistral (skipped without API key)."""
+        if not request.config.getoption("--run-cloud"):
+            pytest.skip("Requires --run-cloud flag and MISTRAL_API_KEY")
         embedder = CloudEmbedder()
         text = "Ceci est un test."
         embedding = embedder.embed_text(text)
@@ -63,10 +62,3 @@ class TestCloudEmbedder:
         # Check normalization
         norm = np.linalg.norm(embedding)
         assert np.isclose(norm, 1.0, atol=1e-5)
-
-
-def pytest_addoption(parser):
-    """Add custom command line options."""
-    parser.addoption(
-        "--run-cloud", action="store_true", default=False, help="Run tests that require cloud API"
-    )
