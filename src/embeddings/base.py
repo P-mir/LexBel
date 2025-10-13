@@ -87,14 +87,17 @@ class BaseEmbedder(ABC):
 
 class EmbeddingError(Exception):
     """Base exception for embedding-related errors."""
+
     pass
 
 
 class ModelLoadError(EmbeddingError):
     """Exception raised when model loading fails."""
+
     pass
 
 
 class EmbeddingGenerationError(EmbeddingError):
     """Exception raised when embedding generation fails."""
+
     pass

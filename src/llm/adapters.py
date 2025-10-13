@@ -8,7 +8,6 @@ logger = setup_logger(__name__)
 
 
 class BaseLLM(ABC):
-
     @abstractmethod
     def generate(self, prompt: str, max_tokens: int = 512, temperature: float = 0.7) -> str:
         """Generate text from a prompt.
@@ -39,13 +38,17 @@ class CloudLLM(BaseLLM):
         try:
             from mistralai import Mistral
         except ImportError:
-            raise ImportError("mistralai package required for CloudLLM. Install with: pip install mistralai")
+            raise ImportError(
+                "mistralai package required for CloudLLM. Install with: pip install mistralai"
+            )
 
         self.model_name = model_name
         api_key = api_key or os.getenv("MISTRAL_API_KEY")
 
         if not api_key:
-            raise ValueError("Mistral API key not found. Set MISTRAL_API_KEY environment variable or pass api_key parameter.")
+            raise ValueError(
+                "Mistral API key not found. Set MISTRAL_API_KEY environment variable or pass api_key parameter."
+            )
 
         self.client = Mistral(api_key=api_key)
         logger.info(f"CloudLLM initialized with Mistral model: {model_name}")
@@ -75,7 +78,7 @@ class LocalLLM(BaseLLM):
         self,
         model_name: str = "Qwen/Qwen2.5-0.5B-Instruct",
         device: str = "cpu",
-        max_length: int = 2048
+        max_length: int = 2048,
     ):
         try:
             import torch
@@ -133,7 +136,9 @@ class LocalLLM(BaseLLM):
                     pad_token_id=self.tokenizer.eos_token_id,
                 )
 
-            response = self.tokenizer.decode(outputs[0][inputs['input_ids'].shape[1]:], skip_special_tokens=True)
+            response = self.tokenizer.decode(
+                outputs[0][inputs["input_ids"].shape[1] :], skip_special_tokens=True
+            )
             return response.strip()
 
         except Exception as e:

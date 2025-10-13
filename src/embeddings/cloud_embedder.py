@@ -13,7 +13,6 @@ logger = setup_logger(__name__)
 
 
 class CloudEmbedder(BaseEmbedder):
-
     def __init__(
         self,
         model_name: str = "mistral-embed",
@@ -33,9 +32,7 @@ class CloudEmbedder(BaseEmbedder):
         try:
             from mistralai import Mistral
         except ImportError:
-            raise ModelLoadError(
-                "mistralai package required"
-            )
+            raise ModelLoadError("mistralai package required")
 
         self.model_name = model_name
         self.batch_size = batch_size
@@ -51,7 +48,9 @@ class CloudEmbedder(BaseEmbedder):
             # Test with a small embedding to get dimension
             test_embedding = self._get_embedding_from_api("test")
             self._embedding_dim = len(test_embedding)
-            logger.info(f"Mistral embedder initialized. Model: {model_name}, Dimension: {self._embedding_dim}")
+            logger.info(
+                f"Mistral embedder initialized. Model: {model_name}, Dimension: {self._embedding_dim}"
+            )
         except Exception as e:
             logger.error(f"Failed to initialize Mistral client: {e}")
             raise ModelLoadError(f"Could not initialize Mistral client: {e}") from e
@@ -134,7 +133,7 @@ class CloudEmbedder(BaseEmbedder):
 
         all_embeddings = []
         for i in range(0, len(texts), self.batch_size):
-            batch = texts[i:i + self.batch_size]
+            batch = texts[i : i + self.batch_size]
             try:
                 batch_embeddings = self._get_embeddings_from_api(batch)
                 all_embeddings.extend(batch_embeddings)
@@ -142,7 +141,7 @@ class CloudEmbedder(BaseEmbedder):
                 if (i + len(batch)) % 1000 == 0:
                     logger.info(f"Embedded {i + len(batch)}/{len(texts)} texts...")
             except Exception as e:
-                logger.error(f"Failed to embed batch {i}-{i+len(batch)}: {e}")
+                logger.error(f"Failed to embed batch {i}-{i + len(batch)}: {e}")
                 raise EmbeddingGenerationError(f"Batch embedding failed: {e}") from e
 
         # Convert to numpy array and normalize

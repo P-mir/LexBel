@@ -1,4 +1,3 @@
-
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
@@ -25,18 +24,18 @@ class LegalArticle:
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary."""
         return {
-            'id': self.id,
-            'reference': self.reference,
-            'article': self.article,
-            'law_type': self.law_type,
-            'code': self.code,
-            'book': self.book,
-            'part': self.part,
-            'act': self.act,
-            'chapter': self.chapter,
-            'section': self.section,
-            'subsection': self.subsection,
-            'description': self.description,
+            "id": self.id,
+            "reference": self.reference,
+            "article": self.article,
+            "law_type": self.law_type,
+            "code": self.code,
+            "book": self.book,
+            "part": self.part,
+            "act": self.act,
+            "chapter": self.chapter,
+            "section": self.section,
+            "subsection": self.subsection,
+            "description": self.description,
         }
 
 
@@ -59,17 +58,17 @@ class TextChunk:
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary."""
         return {
-            'chunk_id': self.chunk_id,
-            'original_text': self.original_text,
-            'article_id': self.article_id,
-            'reference': self.reference,
-            'code': self.code,
-            'book': self.book,
-            'chapter': self.chapter,
-            'section': self.section,
-            'char_start': self.char_start,
-            'char_end': self.char_end,
-            'metadata': self.metadata,
+            "chunk_id": self.chunk_id,
+            "original_text": self.original_text,
+            "article_id": self.article_id,
+            "reference": self.reference,
+            "code": self.code,
+            "book": self.book,
+            "chapter": self.chapter,
+            "section": self.section,
+            "char_start": self.char_start,
+            "char_end": self.char_end,
+            "metadata": self.metadata,
         }
 
 
@@ -86,6 +85,7 @@ class RetrievalResult(BaseModel):
 
     class Config:
         """Pydantic config."""
+
         arbitrary_types_allowed = True
         from_attributes = True
 
@@ -101,5 +101,6 @@ class QueryResponse(BaseModel):
 
     class Config:
         """Pydantic config."""
+
         arbitrary_types_allowed = True
         from_attributes = True  # Allow from_orm style conversion

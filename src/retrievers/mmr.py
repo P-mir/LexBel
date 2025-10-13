@@ -46,7 +46,9 @@ def mmr_select(
         return candidates
 
     query_norm = query_embedding / np.linalg.norm(query_embedding)
-    candidate_norms = candidate_embeddings / np.linalg.norm(candidate_embeddings, axis=1, keepdims=True)
+    candidate_norms = candidate_embeddings / np.linalg.norm(
+        candidate_embeddings, axis=1, keepdims=True
+    )
 
     relevance_scores = np.dot(candidate_norms, query_norm)
 
@@ -119,9 +121,7 @@ class MMRRetriever:
 
         search_start = time.time()
         initial_candidates = self.vector_store.search(
-            query_embedding,
-            top_k=max(self.initial_k, top_k * 2),
-            return_embeddings=True
+            query_embedding, top_k=max(self.initial_k, top_k * 2), return_embeddings=True
         )
         search_time = time.time() - search_start
 
@@ -129,7 +129,9 @@ class MMRRetriever:
             return []
 
         rerank_start = time.time()
-        candidate_embeddings = np.array([c.metadata['embedding'] for c in initial_candidates], dtype=np.float32)
+        candidate_embeddings = np.array(
+            [c.metadata["embedding"] for c in initial_candidates], dtype=np.float32
+        )
 
         mmr_results = mmr_select(
             query_embedding=query_embedding,
@@ -143,9 +145,9 @@ class MMRRetriever:
         total_time = time.time() - start_time
 
         logger.debug(
-            f"MMR retrieval: embed={embed_time*1000:.1f}ms, "
-            f"search={search_time*1000:.1f}ms, rerank={rerank_time*1000:.1f}ms, "
-            f"total={total_time*1000:.1f}ms"
+            f"MMR retrieval: embed={embed_time * 1000:.1f}ms, "
+            f"search={search_time * 1000:.1f}ms, rerank={rerank_time * 1000:.1f}ms, "
+            f"total={total_time * 1000:.1f}ms"
         )
 
         return mmr_results
