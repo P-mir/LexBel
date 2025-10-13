@@ -19,13 +19,13 @@ COPY pyproject.toml uv.lock* README.md /app/
 ARG INSTALL_DEV=true
 
 RUN if [ "$INSTALL_DEV" = "true" ]; then \
-    uv sync --frozen; \
+    uv pip install --system -e .; \
     else \
-    uv sync --frozen --no-dev; \
+    uv pip install --system --no-deps -e .; \
     fi
 
 COPY . /app/
 
 EXPOSE 8501
 
-CMD ["uv", "run", "streamlit", "run", "src/main.py", "--server.port=8501", "--server.address=0.0.0.0"]
+CMD ["streamlit", "run", "src/main.py", "--server.port=8501", "--server.address=0.0.0.0"]

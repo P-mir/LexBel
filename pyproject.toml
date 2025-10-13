@@ -32,6 +32,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "pytest",
+    "pytest-xdist",
     "ruff",
     "mypy",
     "typeguard",
@@ -68,5 +69,10 @@ warn_unreachable = true
 fix = true
 line-length = 100
 src = ["src", "tests"]
+
+[tool.pytest.ini_options]
+markers = [
+    "cloud: marks tests that require cloud API access (deselect with '-m \"not cloud\"')",
+]
 
 [tool.bandit]
