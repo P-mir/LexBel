@@ -71,6 +71,7 @@ line-length = 100
 src = ["src", "tests"]
 
 [tool.pytest.ini_options]
+testpaths = ["tests"]
 markers = [
     "cloud: marks tests that require cloud API access (deselect with '-m \"not cloud\"')",
 ]
