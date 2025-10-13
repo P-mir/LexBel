@@ -1,4 +1,3 @@
-
 import os
 import time
 from typing import Any, Optional
@@ -55,7 +54,6 @@ Réponse:"""
 
 
 class LangChainQA:
-
     def __init__(
         self,
         retriever: Any,
@@ -75,7 +73,7 @@ class LangChainQA:
         self.llm_type = llm_type
 
         if llm_type == "cloud":
-            model_name = model_name or "mistral-small-latest" # cheap, fast and reasonably good
+            model_name = model_name or "mistral-small-latest"  # cheap, fast and reasonably good
             api_key = api_key or os.getenv("MISTRAL_API_KEY")
 
             if not api_key:
@@ -111,7 +109,7 @@ class LangChainQA:
         question: str,
         top_k: int = 5,
         trace_id: Optional[str] = None,
-        session_id: Optional[str] = None
+        session_id: Optional[str] = None,
     ) -> QueryResponse:
         """Answer a question using the RAG system.
 
@@ -136,9 +134,9 @@ class LangChainQA:
                     "retriever_type": type(self.retriever).__name__,
                     "llm_type": self.llm_type,
                     "model": self.model_name,
-                    "top_k": top_k
+                    "top_k": top_k,
                 },
-                tags=["rag", "legal", "qa"]
+                tags=["rag", "legal", "qa"],
             )
 
         retrieval_start = time.time()
@@ -148,8 +146,7 @@ class LangChainQA:
         retrieval_span = None
         if tracer.enabled and trace:
             retrieval_span = trace.start_span(
-                name="retrieval",
-                input={"question": question, "top_k": top_k}
+                name="retrieval", input={"question": question, "top_k": top_k}
             )
 
         sources = self.retriever.retrieve(question, top_k=top_k)
@@ -162,12 +159,12 @@ class LangChainQA:
                 output={
                     "num_sources": len(sources),
                     "sources": [s.reference for s in sources],
-                    "avg_similarity_score": avg_score
+                    "avg_similarity_score": avg_score,
                 },
                 metadata={
                     "duration_ms": retrieval_duration * 1000,
-                    "retriever": type(self.retriever).__name__
-                }
+                    "retriever": type(self.retriever).__name__,
+                },
             )
             retrieval_span.end()
 
@@ -182,7 +179,7 @@ class LangChainQA:
             if trace:
                 trace.update(
                     output={"answer": response.answer, "num_sources": 0},
-                    metadata={"status": "no_sources_found"}
+                    metadata={"status": "no_sources_found"},
                 )
                 tracer.flush()
 
@@ -191,9 +188,7 @@ class LangChainQA:
         # Format context
         context_parts = []
         for i, source in enumerate(sources, 1):
-            context_parts.append(
-                f"[Article {i}] {source.reference}\n{source.text}\n"
-            )
+            context_parts.append(f"[Article {i}] {source.reference}\n{source.text}\n")
         context = "\n".join(context_parts)
 
         input_tokens = estimate_tokens(context) + estimate_tokens(question)
@@ -213,22 +208,23 @@ class LangChainQA:
             # Track generation - let Langfuse calculate cost from token usage
             if tracer.enabled and trace:
                 generation = trace.start_observation(
-                    as_type='generation',
+                    as_type="generation",
                     name="llm_generation",
                     model=self.model_name,
                     input=[
                         {"role": "system", "content": QA_PROMPT_TEMPLATE},
-                        {"role": "user", "content": f"Context: {context[:200]}...\n\nQuestion: {question}"}
+                        {
+                            "role": "user",
+                            "content": f"Context: {context[:200]}...\n\nQuestion: {question}",
+                        },
                     ],
                     output=answer,
                     usage_details={
                         "input_tokens": input_tokens,
                         "output_tokens": output_tokens,
-                        "total_tokens": input_tokens + output_tokens
+                        "total_tokens": input_tokens + output_tokens,
                     },
-                    metadata={
-                        "duration_ms": generation_duration * 1000
-                    }
+                    metadata={"duration_ms": generation_duration * 1000},
                 )
                 generation.end()
 
@@ -243,7 +239,7 @@ class LangChainQA:
                     input={"question": question},
                     output={"error": str(e)},
                     metadata={"error_type": type(e).__name__},
-                    level="ERROR"
+                    level="ERROR",
                 )
                 error_span.end()
 
@@ -257,7 +253,8 @@ class LangChainQA:
                 "retrieval_method": type(self.retriever).__name__,
                 "llm_type": self.llm_type,
                 "cost_usd": cost_info.get("total_cost", 0),
-                "total_tokens": cost_info.get("input_tokens", 0) + cost_info.get("output_tokens", 0)
+                "total_tokens": cost_info.get("input_tokens", 0)
+                + cost_info.get("output_tokens", 0),
             },
         )
 
@@ -267,12 +264,13 @@ class LangChainQA:
                 output={
                     "answer": answer,
                     "num_sources": len(sources),
-                    "cost_usd": cost_info.get("total_cost", 0)
+                    "cost_usd": cost_info.get("total_cost", 0),
                 },
                 metadata={
-                    "total_tokens": cost_info.get("input_tokens", 0) + cost_info.get("output_tokens", 0),
-                    "retrieval_duration_ms": retrieval_duration * 1000
-                }
+                    "total_tokens": cost_info.get("input_tokens", 0)
+                    + cost_info.get("output_tokens", 0),
+                    "retrieval_duration_ms": retrieval_duration * 1000,
+                },
             )
             trace.end()
             tracer.flush()

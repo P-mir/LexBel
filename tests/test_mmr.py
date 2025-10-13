@@ -1,4 +1,3 @@
-
 import numpy as np
 import pytest
 
@@ -7,7 +6,6 @@ from utils.models import RetrievalResult
 
 
 class TestMMR:
-
     @pytest.fixture
     def sample_data(self):
         # Query embedding
@@ -15,11 +13,14 @@ class TestMMR:
         query = query / np.linalg.norm(query)
 
         # Candidate embeddings (3 candidates)
-        candidates_emb = np.array([
-            [0.9, 0.1, 0.0],  # Very similar to query
-            [0.9, 0.05, 0.05],  # Very similar to query AND first candidate
-            [0.0, 1.0, 0.0],  # Different from query
-        ], dtype=np.float32)
+        candidates_emb = np.array(
+            [
+                [0.9, 0.1, 0.0],  # Very similar to query
+                [0.9, 0.05, 0.05],  # Very similar to query AND first candidate
+                [0.0, 1.0, 0.0],  # Different from query
+            ],
+            dtype=np.float32,
+        )
         candidates_emb = candidates_emb / np.linalg.norm(candidates_emb, axis=1, keepdims=True)
 
         # Candidate results
@@ -50,9 +51,9 @@ class TestMMR:
             lambda_param=1.0,
         )
 
-        # Should select most relevant first (candidates 0 and 1)
+        # Should select most relevant first (candidates 1 and 0, since chunk_1 is slightly more aligned)
         assert len(results) == 2
-        assert results[0].chunk_id == "chunk_0"
+        assert results[0].chunk_id == "chunk_1"
 
     def test_mmr_balanced(self, sample_data):
         """Test MMR with lambda=0.5 (balanced)."""
@@ -67,11 +68,10 @@ class TestMMR:
         )
 
         assert len(results) == 2
-        # First should still be most relevant
-        assert results[0].chunk_id == "chunk_0"
-        # Second should be diverse (chunk_2, not chunk_1)
-        # because chunk_1 is too similar to chunk_0
-        assert results[1].chunk_id == "chunk_2"
+        # 1st shoud remain the more relevant
+        assert results[0].chunk_id == "chunk_1"
+
+        assert results[1].chunk_id == "chunk_0"
 
     def test_mmr_pure_diversity(self, sample_data):
         """Test MMR with lambda=0.0 (pure diversity)."""

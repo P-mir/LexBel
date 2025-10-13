@@ -13,6 +13,7 @@ from utils.types import EmbeddingMatrix, EmbeddingVector
 
 logger = setup_logger(__name__)
 
+
 class FAISSVectorStore:
     """
     Uses FAISS IndexFlatIP (Inner Product) for cosine similarity
@@ -20,7 +21,6 @@ class FAISSVectorStore:
     """
 
     def __init__(self, embedding_dim: int):
-
         self.embedding_dim = embedding_dim
 
         # Use IndexFlatIP (flat == no compression/quantization inner product) for cosine similarity with normalized vectors
@@ -63,7 +63,11 @@ class FAISSVectorStore:
         embeddings_f32 = embeddings.astype(np.float32)
         self.index.add(embeddings_f32)
 
-        self.embeddings = np.vstack([self.embeddings, embeddings_f32]) if self.embeddings.size > 0 else embeddings_f32
+        self.embeddings = (
+            np.vstack([self.embeddings, embeddings_f32])
+            if self.embeddings.size > 0
+            else embeddings_f32
+        )
 
         for chunk in chunks:
             self.chunks.append(chunk)
@@ -107,7 +111,7 @@ class FAISSVectorStore:
                 chunk = self.chunks[idx]
                 metadata = chunk.metadata.copy()
                 if return_embeddings:
-                    metadata['embedding'] = self.embeddings[idx]
+                    metadata["embedding"] = self.embeddings[idx]
 
                 result = RetrievalResult(
                     chunk_id=chunk.chunk_id,
@@ -182,13 +186,16 @@ class FAISSVectorStore:
         faiss.write_index(self.index, str(index_path))
 
         metadata_path = path / "metadata.pkl"
-        with open(metadata_path, 'wb') as f:
-            pickle.dump({
-                'metadata': self.metadata,
-                'chunks': self.chunks,
-                'embedding_dim': self.embedding_dim,
-                'embeddings': self.embeddings,
-            }, f)
+        with open(metadata_path, "wb") as f:
+            pickle.dump(
+                {
+                    "metadata": self.metadata,
+                    "chunks": self.chunks,
+                    "embedding_dim": self.embedding_dim,
+                    "embeddings": self.embeddings,
+                },
+                f,
+            )
 
         logger.info(f"Vector store persisted to {path}")
 
@@ -210,14 +217,16 @@ class FAISSVectorStore:
 
         self.index = faiss.read_index(str(index_path))
 
-        with open(metadata_path, 'rb') as f:
+        with open(metadata_path, "rb") as f:
             data = pickle.load(f)
 
-        self.metadata = data['metadata']
-        self.chunks = data['chunks']
-        loaded_dim = data['embedding_dim']
+        self.metadata = data["metadata"]
+        self.chunks = data["chunks"]
+        loaded_dim = data["embedding_dim"]
 
-        self.embeddings = data.get('embeddings', np.array([], dtype=np.float32).reshape(0, loaded_dim))
+        self.embeddings = data.get(
+            "embeddings", np.array([], dtype=np.float32).reshape(0, loaded_dim)
+        )
 
         if loaded_dim != self.embedding_dim:
             raise ValueError(
@@ -234,8 +243,8 @@ class FAISSVectorStore:
             Dictionary with store statistics
         """
         return {
-            'total_documents': self.index.ntotal,
-            'embedding_dimension': self.embedding_dim,
-            'index_type': type(self.index).__name__,
-            'is_trained': self.index.is_trained,
+            "total_documents": self.index.ntotal,
+            "embedding_dimension": self.embedding_dim,
+            "index_type": type(self.index).__name__,
+            "is_trained": self.index.is_trained,
         }
