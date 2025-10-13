@@ -32,7 +32,7 @@ jobs:
 
       - name: Download NLTK data
         run: |
-          uv run python -m nltk.downloader punkt_tab
+          uv run python -m nltk.downloader punkt punkt_tab
 
       - name: Run ruff linter
         run: |

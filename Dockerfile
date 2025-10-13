@@ -24,6 +24,8 @@ RUN if [ "$INSTALL_DEV" = "true" ]; then \
     uv pip install --system --no-deps -e .; \
     fi
 
+RUN python -m nltk.downloader punkt punkt_tab
+
 COPY . /app/
 
 EXPOSE 8501
