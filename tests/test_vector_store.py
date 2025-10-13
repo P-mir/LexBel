@@ -1,4 +1,3 @@
-
 import tempfile
 from pathlib import Path
 
@@ -10,7 +9,6 @@ from vector_store import FAISSVectorStore
 
 
 class TestFAISSVectorStore:
-
     @pytest.fixture
     def sample_chunks(self):
         """Create sample chunks for testing."""
@@ -26,7 +24,7 @@ class TestFAISSVectorStore:
                 section="Section 1",
                 char_start=0,
                 char_end=20,
-                metadata={'test': 'metadata'},
+                metadata={"test": "metadata"},
             ),
             TextChunk(
                 chunk_id="2_chunk_0",
@@ -39,7 +37,7 @@ class TestFAISSVectorStore:
                 section="Section 2",
                 char_start=0,
                 char_end=24,
-                metadata={'test': 'metadata'},
+                metadata={"test": "metadata"},
             ),
         ]
         return chunks
@@ -100,6 +98,6 @@ class TestFAISSVectorStore:
         store.add_documents(sample_chunks, sample_embeddings)
 
         stats = store.get_stats()
-        assert stats['total_documents'] == 2
-        assert stats['embedding_dimension'] == 768
-        assert stats['is_trained']
+        assert stats["total_documents"] == 2
+        assert stats["embedding_dimension"] == 768
+        assert stats["is_trained"]

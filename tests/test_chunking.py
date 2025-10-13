@@ -1,4 +1,3 @@
-
 import pytest
 
 from chunking import TextChunker
@@ -6,7 +5,6 @@ from utils.models import LegalArticle
 
 
 class TestTextChunker:
-
     @pytest.fixture
     def sample_article(self):
         return LegalArticle(

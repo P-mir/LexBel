@@ -4,14 +4,14 @@ from .models import LegalArticle, QueryResponse, RetrievalResult, TextChunk
 from .types import EmbeddingMatrix, EmbeddingVector
 
 __all__ = [
-    'EmbeddingVector',
-    'EmbeddingMatrix',
-    'LegalArticle',
-    'TextChunk',
-    'RetrievalResult',
-    'QueryResponse',
-    'setup_logger',
-    'save_json',
-    'load_json',
-    'update_metrics',
+    "EmbeddingVector",
+    "EmbeddingMatrix",
+    "LegalArticle",
+    "TextChunk",
+    "RetrievalResult",
+    "QueryResponse",
+    "setup_logger",
+    "save_json",
+    "load_json",
+    "update_metrics",
 ]

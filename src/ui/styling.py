@@ -1,5 +1,6 @@
-
 """The branding..."""
+
+
 def get_custom_css() -> str:
     return """
     <style>
@@ -376,6 +377,7 @@ def get_custom_css() -> str:
     }
     </style>
     """
+
 
 def get_lexbel_logo_html() -> str:
     """Return HTML for LexBel logo display."""

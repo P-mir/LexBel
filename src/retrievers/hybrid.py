@@ -156,9 +156,7 @@ class HybridRetriever:
 
         # Sort by hybrid score
         sorted_chunk_ids = sorted(
-            hybrid_scores.keys(),
-            key=lambda x: hybrid_scores[x],
-            reverse=True
+            hybrid_scores.keys(), key=lambda x: hybrid_scores[x], reverse=True
         )[:top_k]
 
         # Build results
@@ -174,9 +172,9 @@ class HybridRetriever:
                     score=hybrid_scores[chunk_id],
                     metadata={
                         **chunk.metadata,
-                        'vector_score': vector_scores.get(chunk_id, 0.0),
-                        'lexical_score': lexical_scores.get(chunk_id, 0.0),
-                        'hybrid_alpha': self.alpha,
+                        "vector_score": vector_scores.get(chunk_id, 0.0),
+                        "lexical_score": lexical_scores.get(chunk_id, 0.0),
+                        "hybrid_alpha": self.alpha,
                     },
                     article_id=chunk.article_id,
                     reference=chunk.reference,
@@ -187,8 +185,8 @@ class HybridRetriever:
         total_time = time.time() - start_time
 
         logger.debug(
-            f"Hybrid retrieval: lexical={lex_time*1000:.1f}ms, "
-            f"vector={vec_time*1000:.1f}ms, total={total_time*1000:.1f}ms"
+            f"Hybrid retrieval: lexical={lex_time * 1000:.1f}ms, "
+            f"vector={vec_time * 1000:.1f}ms, total={total_time * 1000:.1f}ms"
         )
 
         return results

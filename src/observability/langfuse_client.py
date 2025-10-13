@@ -37,11 +37,7 @@ class LangfuseTracer:
 
         if secret_key and public_key:
             try:
-                self.client = Langfuse(
-                    secret_key=secret_key,
-                    public_key=public_key,
-                    host=host
-                )
+                self.client = Langfuse(secret_key=secret_key, public_key=public_key, host=host)
                 self.enabled = True
                 logger.info(f"Langfuse initialized successfully (host: {host})")
             except Exception as e:
@@ -58,7 +54,7 @@ class LangfuseTracer:
         user_id: Optional[str] = None,
         session_id: Optional[str] = None,
         metadata: Optional[Dict] = None,
-        tags: Optional[List[str]] = None
+        tags: Optional[List[str]] = None,
     ):
         """Create a new trace by starting a span."""
         if not self.enabled:
@@ -68,14 +64,11 @@ class LangfuseTracer:
             # In Langfuse 3.x, start_span creates a trace automatically
             trace_metadata = metadata or {}
             if session_id:
-                trace_metadata['session_id'] = session_id
+                trace_metadata["session_id"] = session_id
             if user_id:
-                trace_metadata['user_id'] = user_id
-            
-            span = self.client.start_span(
-                name=name,
-                metadata=trace_metadata
-            )
+                trace_metadata["user_id"] = user_id
+
+            span = self.client.start_span(name=name, metadata=trace_metadata)
             # Return the span object which contains trace_id
             return span
         except Exception as e:
@@ -88,7 +81,7 @@ class LangfuseTracer:
         name: str,
         input_data: Any = None,
         metadata: Optional[Dict] = None,
-        start_time: Optional[float] = None
+        start_time: Optional[float] = None,
     ):
         """Create a span within a trace - DEPRECATED, use trace.start_span() instead."""
         # This method is kept for backward compatibility but should not be used
@@ -106,7 +99,7 @@ class LangfuseTracer:
         metadata: Optional[Dict] = None,
         usage: Optional[Dict] = None,
         start_time: Optional[float] = None,
-        end_time: Optional[float] = None
+        end_time: Optional[float] = None,
     ):
         """Track LLM generation - DEPRECATED, use span.start_generation() instead."""
         # This method is kept for backward compatibility but should not be used
@@ -124,6 +117,7 @@ class LangfuseTracer:
 
 
 _tracer = None
+
 
 def get_tracer() -> LangfuseTracer:
     """Get singleton tracer instance."""
@@ -149,7 +143,7 @@ def trace_context(
     user_id: Optional[str] = None,
     session_id: Optional[str] = None,
     metadata: Optional[Dict] = None,
-    tags: Optional[List[str]] = None
+    tags: Optional[List[str]] = None,
 ):
     """Context manager for tracing."""
     tracer = get_tracer()
@@ -159,11 +153,7 @@ def trace_context(
         return
 
     trace = tracer.create_trace(
-        name=name,
-        user_id=user_id,
-        session_id=session_id,
-        metadata=metadata,
-        tags=tags
+        name=name, user_id=user_id, session_id=session_id, metadata=metadata, tags=tags
     )
 
     try:
@@ -175,6 +165,7 @@ def trace_context(
 
 def observe_retrieval(func):
     """Decorator for retrieval operations."""
+
     @wraps(func)
     def wrapper(*args, **kwargs):
         tracer = get_tracer()
@@ -202,6 +193,7 @@ def observe_retrieval(func):
 
 def observe_llm(func):
     """Decorator for LLM generation."""
+
     @wraps(func)
     def wrapper(*args, **kwargs):
         tracer = get_tracer()
