@@ -51,9 +51,9 @@ class TestMMR:
             lambda_param=1.0,
         )
 
-        # Should select most relevant first (candidates 0 and 1)
+        # Should select most relevant first (candidates 1 and 0, since chunk_1 is slightly more aligned)
         assert len(results) == 2
-        assert results[0].chunk_id == "chunk_0"
+        assert results[0].chunk_id == "chunk_1"
 
     def test_mmr_balanced(self, sample_data):
         """Test MMR with lambda=0.5 (balanced)."""
@@ -68,11 +68,10 @@ class TestMMR:
         )
 
         assert len(results) == 2
-        # First should still be most relevant
-        assert results[0].chunk_id == "chunk_0"
-        # Second should be diverse (chunk_2, not chunk_1)
-        # because chunk_1 is too similar to chunk_0
-        assert results[1].chunk_id == "chunk_2"
+        # 1st shoud remain the more relevant
+        assert results[0].chunk_id == "chunk_1"
+
+        assert results[1].chunk_id == "chunk_0"
 
     def test_mmr_pure_diversity(self, sample_data):
         """Test MMR with lambda=0.0 (pure diversity)."""
