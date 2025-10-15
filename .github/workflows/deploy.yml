@@ -1,4 +1,4 @@
-name: Deploy to AWS App Runner
+name: Deploy to AWS ECS Fargate
 
 on:
   push:
@@ -11,7 +11,7 @@ jobs:
     permissions:
       id-token: write
       contents: read
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -39,18 +39,44 @@ jobs:
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
           echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
 
-      - name: Deploy to App Runner
-        id: deploy-apprunner
-        uses: awslabs/amazon-app-runner-deploy@main
-        with:
-          service: ${{ secrets.APP_RUNNER_SERVICE_NAME }}
-          image: ${{ steps.build-image.outputs.image }}
-          access-role-arn: ${{ secrets.APP_RUNNER_ACCESS_ROLE_ARN }}
-          region: ${{ secrets.AWS_REGION }}
-          cpu: 1
-          memory: 2
-          port: 8501
-          wait-for-service-stability-seconds: 600
+      - name: Download task definition
+        run: |
+          aws ecs describe-task-definition \
+            --task-definition ${{ secrets.ECS_TASK_DEFINITION }} \
+            --query taskDefinition > task-definition.json
 
-      - name: App Runner URL
-        run: echo "App deployed to ${{ steps.deploy-apprunner.outputs.service-url }}"
+      - name: Fill in the new image ID in the Amazon ECS task definition
+        id: task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: task-definition.json
+          container-name: ${{ secrets.CONTAINER_NAME }}
+          image: ${{ steps.build-image.outputs.image }}
+
+      - name: Deploy Amazon ECS task definition
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.task-def.outputs.task-definition }}
+          service: ${{ secrets.ECS_SERVICE }}
+          cluster: ${{ secrets.ECS_CLUSTER }}
+          wait-for-service-stability: true
+
+      - name: Get service URL
+        run: |
+          TARGET_GROUP_ARN=$(aws ecs describe-services \
+            --cluster ${{ secrets.ECS_CLUSTER }} \
+            --services ${{ secrets.ECS_SERVICE }} \
+            --query 'services[0].loadBalancers[0].targetGroupArn' \
+            --output text)
+
+          LB_ARN=$(aws elbv2 describe-target-groups \
+            --target-group-arns $TARGET_GROUP_ARN \
+            --query 'TargetGroups[0].LoadBalancerArns[0]' \
+            --output text)
+
+          LB_DNS=$(aws elbv2 describe-load-balancers \
+            --load-balancer-arns $LB_ARN \
+            --query 'LoadBalancers[0].DNSName' \
+            --output text)
+
+          echo "App deployed to: http://$LB_DNS"
