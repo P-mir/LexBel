@@ -1,4 +1,5 @@
 import base64
+import logging
 import sys
 import time
 from pathlib import Path
@@ -10,6 +11,13 @@ load_dotenv()
 
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent / "src"))
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 from analytics.metrics import LexBelAnalytics  # noqa: E402
 from chains import LangChainQA  # noqa: E402
@@ -299,6 +307,7 @@ def main():
 
     except Exception as e:
         loading_placeholder.empty()
+        logger.error(f"Failed to load system: {e}", exc_info=True)
         st.sidebar.error(f"❌ Erreur: {e}")
         st.error("Veuillez vérifier la configuration du système.")
         return
