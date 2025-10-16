@@ -1,0 +1,3 @@
+[theme]
+# Force light mode (colors are handled by custom CSS in the app)
+base = "light"
