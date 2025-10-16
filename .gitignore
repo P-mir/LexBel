@@ -27,7 +27,8 @@ __pycache__/
 .ipynb_checkpoints/
 
 # MLOps Artifacts & Outputs
-/data/
+/data/articles*.csv
+/data/metrics/
 /datasets/
 /mlruns/
 /outputs/
