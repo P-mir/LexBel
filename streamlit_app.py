@@ -473,9 +473,9 @@ def main():
         """
     <div class="lexbel-footer">
         <strong>LexBel</strong> - Intelligence Juridique Belge<br/>
-        Système RAG avancé pour le droit belge<br/>
-        <a href="mailto:ptrk.miro@gmail.com" style="color: var(--lexbel-gray); font-size: 0.75rem; text-decoration: none; opacity: 0.7; transition: opacity 0.3s;">
-            📧 ptrk.miro@gmail.com
+        Système RAG pour le droit belge<br/>
+        <a href="https://github.com/P-mir/LexBel" target="_blank" style="color: var(--lexbel-gray); font-size: 0.75rem; text-decoration: none; opacity: 0.7; transition: opacity 0.3s;">
+             GitHub Project
         </a>
     </div>
     """,
