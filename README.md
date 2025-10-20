@@ -10,7 +10,7 @@
 
 ## What is LexBel?
 
-LexBel allows citizens to ask juridic questions with the insurance that the answers are not hallucinated by the LLM.
+LexBel allows citizens to ask juridic questions answered by an LLM anchored to a database of Belgian Code of Law in order to reduce hallucinations.
 
 ### Demo
 
@@ -20,10 +20,19 @@ https://github.com/user-attachments/assets/b52fa5de-ecf9-4210-a7a2-564d15aa63ae
 
 ## Covered Legal Codes
 
-the corpus of articles support the RAG system comprise 32 Belgian codes, collected in 2022
+the corpus of articles support the RAG system comprise 32 Belgian codes, collected in May 2021.
+
+ [!Limitations]
+
+This project was done for demo purposes and users might several limitations:
+
+- Potentially outdated answers
+- Limited data: Several important Code of Law are out of the scope, such as Labour, Social Law and Highway Code. Ordinary Laws, regulations are out of the scope as well.
+- Small model: A cost efficient model is used, which may not always return the most relevant results.
 
 
-## 🚀 Quick Start
+
+##  Quick Start
 
 ### Prerequisites
 
@@ -59,7 +68,7 @@ Visit `http://localhost:8501`
 
 ### Tech Stack
 
-**Core ML/AI:**
+**Core ML/AI**
 - `sentence-transformers` — Multilingual embeddings (paraphrase-multilingual-mpnet-base-v2 for local run on cpu)
 - `FAISS` — High performance Vector similarity search with
 - **MMR (Maximal Marginal Relevance)** for diversity-aware retrieval
@@ -68,17 +77,18 @@ Visit `http://localhost:8501`
 - `Mistral AI` — LLM for answer generation (mistral-small-latest)
 - `Langfuse` — observability and tracing
 
-**Application Layer:**
+**Application Layer**
 - `Streamlit` — Interactive web interface
 - `Pandas`
 - `Plotly`
 
-**Infrastructure & devops:**
+**Infrastructure & devops**
+- `AWS ECS` + `Fargate`
 - `Docker`
 - `uv` — Fast (er than poetry) dependency management
 - `pytest`
 
-**Code Quality & Security:**
+**Code Quality & Security**
 
 - pre-commit hooks
 - Type hints with mypy
@@ -128,13 +138,13 @@ Analytics are saved to `data/metrics/` for continuous monitoring.
 ### Langfuse Monitoring & Tracing
 
 
-** Dashboard**
+**Dashboard**
 
 ![Langfuse Dashboard](assets/langfuse_dashboard.png)
 
 track key metrics: query volumes, costs, tokens, latency metrics (P50/P95/P99).
 
-**🔍 Trace Visualization to track individual query**
+**Trace Visualization to track individual query**
 
 ![Langfuse Tracing](assets/langfuse_tracing.png)
 
