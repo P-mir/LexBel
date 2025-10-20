@@ -138,3 +138,18 @@ Instructions:
 
         logger.info("Query completed successfully")
         return response
+
+    def generate_followup_questions(self, context: str, answer: str, n: int = 3) -> list[str]:
+        try:
+            prompt = f"""Basé sur cette réponse juridique, génère {n} questions de suivi pertinentes et courtes que l'utilisateur pourrait poser.
+
+Réponse: {answer[:500]}
+
+Génère uniquement les questions, une par ligne, sans numérotation ni tirets."""
+
+            result = self.llm.invoke(prompt)
+            questions = [q.strip() for q in result.content.strip().split('\n') if q.strip()]
+            return questions[:n]
+        except Exception as e:
+            logger.error(f"Failed to generate follow-up questions: {e}")
+            return []
