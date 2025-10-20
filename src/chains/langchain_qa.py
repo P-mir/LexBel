@@ -35,8 +35,8 @@ class LocalLLMWrapper(LLM):
         """Return identifying parameters."""
         return {"model_name": self.local_llm.model_name}
 
-
-QA_PROMPT_TEMPLATE = """Tu es un assistant juridique expert en droit belge. Réponds à la question suivante en te basant UNIQUEMENT sur les articles de loi fournis ci-dessous.
+# Adapt the prompt to take into account that the current dataset is missing a lot of juridic context, so the LLM should use its own knowledge to complement the answer. In an actual production case, we might not want to allow that, but for demo purposes it's better to have more complete answers.
+QA_PROMPT_TEMPLATE = """Tu es un assistant juridique expert en droit belge. Réponds à la question suivante en te basant d'abord sur les articles de loi fournis ci-dessous.
 
 Articles de loi pertinents:
 {context}
@@ -44,7 +44,7 @@ Articles de loi pertinents:
 Question: {question}
 
 Instructions:
-1. Base ta réponse uniquement sur les articles fournis
+1. Base ta réponse sur les articles fournis, mais enrichis les avec tes connaissances juridiques si c'est nécessaire pour fournir une réponse plus complète
 2. Cite les références exactes des articles utilisés
 3. Si l'information n'est pas dans les articles fournis, indique-le clairement
 4. Sois précis et concis
