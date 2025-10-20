@@ -35,6 +35,7 @@ class LocalLLMWrapper(LLM):
         """Return identifying parameters."""
         return {"model_name": self.local_llm.model_name}
 
+
 # Adapt the prompt to take into account that the current dataset is missing a lot of juridic context, so the LLM should use its own knowledge to complement the answer. In an actual production case, we might not want to allow that, but for demo purposes it's better to have more complete answers.
 QA_PROMPT_TEMPLATE = """Tu es un assistant juridique expert en droit belge. Réponds à la question suivante en te basant d'abord sur les articles de loi fournis ci-dessous.
 
