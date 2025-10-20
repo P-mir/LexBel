@@ -178,7 +178,6 @@ def main():
     st.markdown("# Recherche Juridique")
     st.markdown("*Assistant intelligent pour le droit belge*")
 
-    # Query interface - display first
     with st.expander("📝 Questions Suggérées", expanded=False):
         st.markdown("""
         - Quels sont les objectifs climatiques de la Région bruxelloise ?
@@ -187,41 +186,52 @@ def main():
         - Quels services existent pour les personnes handicapées en Wallonie ?
         """)
 
-    question = st.text_area(
-        "Votre Question",
-        height=120,
-        placeholder="Posez votre question sur le droit belge...",
-        label_visibility="collapsed",
-        max_chars=1000,
-    )
+    if mode == "Assistant Conversationnel":
+        for message in st.session_state.chat_history:
+            with st.chat_message(message["role"]):
+                st.markdown(message["content"])
+                if message["role"] == "assistant" and message.get("sources"):
+                    with st.expander(f"📚 {len(message['sources'])} sources"):
+                        for i, src in enumerate(message["sources"], 1):
+                            st.caption(f"**{i}.** {src}")
 
-    if question:
-        char_count = len(question)
-        token_estimate = char_count // 4
-        if token_estimate > 1000:
-            st.error(f"⚠️ Question trop longue: ~{token_estimate} tokens (max: 1000 tokens)")
-        elif token_estimate > 800:
-            st.warning(f"Attention: ~{token_estimate} tokens / 1000")
-        else:
-            st.caption(f"📊 ~{token_estimate} tokens / 1000")
+        question = st.chat_input("Posez votre question sur le droit belge...")
+    else:
+        question = st.text_area(
+            "Votre Question",
+            height=120,
+            placeholder="Posez votre question sur le droit belge...",
+            label_visibility="collapsed",
+            max_chars=1000,
+        )
 
-    col1, col2, col3 = st.columns([2, 1, 1])
-    with col1:
-        search_button = st.button("🔎 Rechercher", type="primary", use_container_width=True)
-    with col2:
-        clear_button = st.button("🗑️ Effacer", use_container_width=True)
+        if question:
+            char_count = len(question)
+            token_estimate = char_count // 4
+            if token_estimate > 1000:
+                st.error(f"⚠️ Question trop longue: ~{token_estimate} tokens (max: 1000 tokens)")
+            elif token_estimate > 800:
+                st.warning(f"Attention: ~{token_estimate} tokens / 1000")
+            else:
+                st.caption(f"📊 ~{token_estimate} tokens / 1000")
 
-    if clear_button:
-        st.rerun()
+        col1, col2 = st.columns([2, 1])
+        with col1:
+            search_button = st.button("🔎 Rechercher", type="primary", use_container_width=True)
+        with col2:
+            clear_button = st.button("🗑️ Effacer", use_container_width=True)
+
+        if clear_button:
+            st.rerun()
 
     with st.sidebar:
         st.markdown("### Paramètres de Recherche")
 
         mode = st.selectbox(
             "Mode",
-            options=["RAG Complet", "Récupération Seule"],
+            options=["Assistant Conversationnel", "Récupération Seule"],
             index=0,
-            help="RAG Complet: Recherche + Réponse IA | Récupération: Documents uniquement",
+            help="Assistant Conversationnel: Chat avec mémoire | Récupération: Documents uniquement",
         )
 
         vector_store_dir = "data/vector_store"
@@ -240,6 +250,12 @@ def main():
             value=5,
             help="Nombre d'articles juridiques à récupérer",
         )
+
+        if mode == "Assistant Conversationnel":
+            st.markdown("---")
+            if st.button("🔄 Nouvelle Conversation", use_container_width=True):
+                st.session_state.chat_history = []
+                st.rerun()
 
         st.markdown("### Paramètres Avancés")
 
