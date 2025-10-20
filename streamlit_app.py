@@ -19,7 +19,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 from analytics.metrics import LexBelAnalytics  # noqa: E402
-from chains import LangChainQA  # noqa: E402
+from chains import ConversationalQA, LangChainQA  # noqa: E402
 from embeddings import CloudEmbedder  # noqa: E402
 from observability import generate_session_id, get_tracer  # noqa: E402
 from retrievers import HybridRetriever, MMRRetriever  # noqa: E402
@@ -102,7 +102,7 @@ def main():
     if "session_id" not in st.session_state:
         st.session_state.session_id = generate_session_id()
         logger.info(f"New session started: {st.session_state.session_id}")
-    
+
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
         logger.info("Chat history initialized")
@@ -330,8 +330,9 @@ def main():
         st.error("Veuillez vérifier la configuration du système.")
         return
 
-    if search_button and question:
-        # Validate token limit
+    should_process = (mode == "Assistant Conversationnel" and question) or (search_button and question)
+
+    if should_process:
         token_estimate = len(question) // 4
         if token_estimate > 1000:
             st.error(
@@ -388,18 +389,34 @@ def main():
                                 with c2:
                                     st.metric("Lexical", f"{source.metadata['lexical_score']:.3f}")
 
-                else:  # RAG Complet
-                    qa_chain = LangChainQA(
+                else:  # Assistant Conversationnel
+                    qa_chain = ConversationalQA(
                         retriever=retriever,
-                        llm_type="cloud",
                     )
 
                     response = qa_chain.query(
-                        question, top_k=top_k, session_id=st.session_state.session_id
+                        question,
+                        top_k=top_k,
+                        thread_id=st.session_state.session_id,
+                        session_id=st.session_state.session_id
                     )
                     total_time_ms = (time.time() - start_time) * 1000
 
-                    # Log to analytics
+                    st.session_state.chat_history.append({
+                        "role": "user",
+                        "content": question,
+                        "timestamp": time.time()
+                    })
+
+                    st.session_state.chat_history.append({
+                        "role": "assistant",
+                        "content": response.answer,
+                        "sources": [s.reference for s in response.sources],
+                        "cost_usd": response.retrieval_details.get("cost_usd", 0),
+                        "tokens": response.retrieval_details.get("total_tokens", 0),
+                        "timestamp": time.time()
+                    })
+
                     analytics.log_search(
                         query=question,
                         retriever_type=retriever_type,
@@ -410,71 +427,7 @@ def main():
                         tokens=response.retrieval_details.get("total_tokens", 0),
                     )
 
-                    st.markdown("## 💡 Réponse")
-                    st.markdown(response.answer)
-
-                    col_time, col_sources, col_cost = st.columns(3)
-                    with col_time:
-                        st.metric("Temps Total", f"{total_time_ms:.0f}ms")
-                    with col_sources:
-                        st.metric("Sources Utilisées", len(response.sources))
-                    with col_cost:
-                        cost_usd = response.retrieval_details.get("cost_usd", 0)
-                        if cost_usd > 0:
-                            st.metric("Coût", f"${cost_usd:.4f}")
-                        else:
-                            st.metric(
-                                "Tokens", response.retrieval_details.get("total_tokens", "N/A")
-                            )
-
-                    st.markdown("## 📚 Sources")
-
-                    for i, source in enumerate(response.sources, 1):
-                        with st.expander(
-                            f"📄 **Source {i}** - {source.reference} (Score: {source.score:.3f})"
-                        ):
-                            st.markdown("**Texte:**")
-                            st.markdown(f"*{source.text}*")
-
-                            col1, col2 = st.columns(2)
-                            with col1:
-                                st.markdown(f"**Article ID:** `{source.article_id}`")
-                                st.markdown(f"**Code:** `{source.code}`")
-                                if source.metadata.get("book"):
-                                    st.markdown(f"**Livre:** {source.metadata['book']}")
-                            with col2:
-                                if source.metadata.get("chapter"):
-                                    st.markdown(f"**Chapitre:** {source.metadata['chapter']}")
-                                if source.metadata.get("section"):
-                                    st.markdown(f"**Section:** {source.metadata['section']}")
-
-                            if "vector_score" in source.metadata:
-                                st.markdown("**Scores:**")
-                                col1, col2, col3 = st.columns(3)
-                                with col1:
-                                    st.metric("Vectoriel", f"{source.metadata['vector_score']:.3f}")
-                                with col2:
-                                    st.metric("Lexical", f"{source.metadata['lexical_score']:.3f}")
-                                with col3:
-                                    st.metric("Hybrid", f"{source.score:.3f}")
-
-                with st.expander("🔧 Détails Techniques"):
-                    if mode == "Récupération Seule":
-                        details = {
-                            "Temps de récupération (ms)": f"{retrieval_time_ms:.2f}",
-                            "Nombre de sources": len(sources),
-                            "Type de récupérateur": retriever_type.upper(),
-                            "Embedder": "Local (sentence-transformers)",
-                        }
-                    else:
-                        details = {
-                            "Temps total (ms)": f"{total_time_ms:.2f}",
-                            "Nombre de sources": len(response.sources),
-                            "Type de récupérateur": retriever_type.upper(),
-                            "Embedder": "Local (sentence-transformers)",
-                            "LLM": "Mistral API (mistral-small-latest)",
-                        }
-                    st.json(details)
+                    st.rerun()
 
             except Exception as e:
                 st.error(f"❌ Erreur lors du traitement: {e}")
