@@ -34,3 +34,6 @@ __pycache__/
 /outputs/
 /models/
 !**/.gitkeep
+
+# Model files
+data/models/
