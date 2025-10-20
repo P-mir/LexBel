@@ -72,11 +72,11 @@ class ConversationalQA:
     ) -> QueryResponse:
         tracer = get_tracer()
         retrieval_start = time.time()
-        
+
         logger.info(f"Retrieving documents for: {question[:100]}...")
         sources = self.retriever.retrieve(question, top_k=top_k)
         retrieval_duration = time.time() - retrieval_start
-        
+
         if not sources:
             return QueryResponse(
                 query=question,
@@ -84,12 +84,12 @@ class ConversationalQA:
                 sources=[],
                 retrieval_details={"num_sources": 0},
             )
-        
+
         context_parts = []
         for i, source in enumerate(sources, 1):
             context_parts.append(f"[Article {i}] {source.reference}\n{source.text}\n")
         context = "\n".join(context_parts)
-        
+
         system_prompt = f"""Tu es un assistant juridique expert en droit belge. Réponds à la question en te basant sur les articles de loi fournis et l'historique de conversation.
 
 Articles de loi pertinents:
@@ -101,28 +101,28 @@ Instructions:
 3. Si l'information n'est pas dans les articles, indique-le clairement
 4. Maintiens la cohérence avec la conversation précédente
 5. Sois précis et concis"""
-        
+
         input_tokens = estimate_tokens(context) + estimate_tokens(question) + estimate_tokens(system_prompt)
-        
+
         logger.info("Generating answer with LLM...")
         generation_start = time.time()
-        
+
         try:
             config = {"configurable": {"thread_id": thread_id or session_id or "default"}}
             input_messages = [HumanMessage(content=f"{system_prompt}\n\nQuestion: {question}")]
-            
+
             result = self.graph.invoke({"messages": input_messages}, config=config)
             answer = result["messages"][-1].content.strip()
             generation_duration = time.time() - generation_start
-            
+
             output_tokens = estimate_tokens(answer)
             cost_info = calculate_cost(self.model_name, input_tokens, output_tokens)
-        
+
         except Exception as e:
             logger.error(f"LLM generation failed: {e}")
             answer = f"Erreur lors de la génération de la réponse: {e}"
             cost_info = {"total_cost": 0, "input_tokens": 0, "output_tokens": 0}
-        
+
         response = QueryResponse(
             query=question,
             answer=answer,
@@ -135,6 +135,6 @@ Instructions:
                 "total_tokens": cost_info.get("input_tokens", 0) + cost_info.get("output_tokens", 0),
             },
         )
-        
+
         logger.info("Query completed successfully")
         return response
