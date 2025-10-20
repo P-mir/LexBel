@@ -20,17 +20,14 @@ https://github.com/user-attachments/assets/b52fa5de-ecf9-4210-a7a2-564d15aa63ae
 
 ## Covered Legal Codes
 
-the corpus of articles support the RAG system comprise 32 Belgian codes, collected in May 2021.
+the corpus of articles support the RAG system comprise 32 Belgian codes, collected in May 2021 by Louis, A., & Spanakis, G.
 
- [!Limitations]
+> [!WARNING]
+> Users might notice several limitations:
 
-This project was done for demo purposes and users might several limitations:
-
-- Potentially outdated answers
-- Limited data: Several important Code of Law are out of the scope, such as Labour, Social Law and Highway Code. Ordinary Laws, regulations are out of the scope as well.
-- Small model: A cost efficient model is used, which may not always return the most relevant results.
-
-
+> - **Potentially outdated answers** due to the age of the dataset.
+> - **Limited data**: Several important Code of Law are out of the scope, such as Labour, Social Law and Highway Code. Ordinary Laws, regulations are out of the scope as well.
+> - **Small model**: A cost efficient model is used, which may not always return the most relevant results.
 
 ##  Quick Start
 
@@ -159,7 +156,6 @@ track key metrics: query volumes, costs, tokens, latency metrics (P50/P95/P99).
 
 ### Dataset Citation
 
-If you use this dataset in your research, please cite:
 
 > **Louis, A., & Spanakis, G.** (2022). *A Statutory Article Retrieval Dataset in French*.
 > In Proceedings of the 60th Annual Meeting of the Association for Computational Linguistics (ACL 2022),
