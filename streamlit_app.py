@@ -392,14 +392,7 @@ def main():
                     )
 
                     st.markdown("## 💡 Réponse")
-                    st.markdown(
-                        f"""
-                    <div class="dashboard-card">
-                        {response.answer}
-                    </div>
-                    """,
-                        unsafe_allow_html=True,
-                    )
+                    st.markdown(response.answer)
 
                     col_time, col_sources, col_cost = st.columns(3)
                     with col_time:
@@ -474,8 +467,8 @@ def main():
     <div class="lexbel-footer">
         <strong>LexBel</strong> - Intelligence Juridique Belge<br/>
         Système RAG pour le droit belge<br/>
-        <a href="https://github.com/P-mir/LexBel" target="_blank" style="color: var(--lexbel-gray); font-size: 0.75rem; text-decoration: none; opacity: 0.7; transition: opacity 0.3s;">
-             GitHub Project
+        <a href="https://github.com/P-mir/LexBel" target="_blank" style="color: var(--lexbel-gray); font-size: 1.0rem; text-decoration: none; opacity: 0.7; transition: opacity 0.3s;">
+             GitHub Repository
         </a>
     </div>
     """,
