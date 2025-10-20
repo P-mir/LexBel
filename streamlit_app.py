@@ -179,7 +179,6 @@ def main():
         st.markdown("""
         - Quels sont les objectifs climatiques de la Région bruxelloise ?
         - Quelles informations doit mentionner le notaire lors d'une vente immobilière ?
-        - Comment est définie la biomasse ?
         - Quelles matières sont visées par l'article 39 de la Constitution ?
         - Quels services existent pour les personnes handicapées en Wallonie ?
         """)
