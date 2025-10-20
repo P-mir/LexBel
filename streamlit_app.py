@@ -194,8 +194,20 @@ def main():
                     with st.expander(f"📚 {len(message['sources'])} sources"):
                         for i, src in enumerate(message["sources"], 1):
                             st.caption(f"**{i}.** {src}")
+                
+                if message["role"] == "assistant" and message.get("followup_questions"):
+                    st.markdown("**Questions suggérées:**")
+                    cols = st.columns(len(message["followup_questions"]))
+                    for i, (col, q) in enumerate(zip(cols, message["followup_questions"])):
+                        with col:
+                            if st.button(q, key=f"followup_{message.get('timestamp', 0)}_{i}", use_container_width=True):
+                                st.session_state.selected_followup = q
 
         question = st.chat_input("Posez votre question sur le droit belge...")
+        
+        if "selected_followup" in st.session_state:
+            question = st.session_state.selected_followup
+            del st.session_state.selected_followup
     else:
         question = st.text_area(
             "Votre Question",
@@ -401,6 +413,12 @@ def main():
                         session_id=st.session_state.session_id
                     )
                     total_time_ms = (time.time() - start_time) * 1000
+                    
+                    followup_questions = qa_chain.generate_followup_questions(
+                        context="", 
+                        answer=response.answer, 
+                        n=2
+                    )
 
                     st.session_state.chat_history.append({
                         "role": "user",
@@ -414,6 +432,7 @@ def main():
                         "sources": [s.reference for s in response.sources],
                         "cost_usd": response.retrieval_details.get("cost_usd", 0),
                         "tokens": response.retrieval_details.get("total_tokens", 0),
+                        "followup_questions": followup_questions,
                         "timestamp": time.time()
                     })
 
