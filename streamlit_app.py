@@ -102,6 +102,7 @@ def main():
     if "session_id" not in st.session_state:
         st.session_state.session_id = generate_session_id()
         logger.info(f"New session started: {st.session_state.session_id}")
+        analytics.log_conversation_start(st.session_state.session_id)
 
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
@@ -266,7 +267,13 @@ def main():
         if mode == "Assistant Conversationnel":
             st.markdown("---")
             if st.button("🔄 Nouvelle Conversation", use_container_width=True):
+                if len(st.session_state.chat_history) > 0:
+                    analytics.end_conversation(st.session_state.session_id)
+                st.session_state.session_id = generate_session_id()
                 st.session_state.chat_history = []
+                analytics.log_conversation_start(st.session_state.session_id)
+                st.rerun()
+                analytics.log_conversation_start(st.session_state.session_id)
                 st.rerun()
 
         st.markdown("### Paramètres Avancés")
@@ -442,6 +449,14 @@ def main():
                         num_results=len(response.sources),
                         retrieval_time_ms=total_time_ms,
                         sources=[s.reference for s in response.sources],
+                        cost_usd=response.retrieval_details.get("cost_usd", 0.0),
+                        tokens=response.retrieval_details.get("total_tokens", 0),
+                        conversation_id=st.session_state.session_id,
+                        turn_number=len(st.session_state.chat_history) // 2,
+                    )
+                    
+                    analytics.log_conversation_turn(
+                        conversation_id=st.session_state.session_id,
                         cost_usd=response.retrieval_details.get("cost_usd", 0.0),
                         tokens=response.retrieval_details.get("total_tokens", 0),
                     )

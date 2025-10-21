@@ -22,6 +22,7 @@ class LexBelAnalytics:
                 return json.load(f)
         return {
             "searches": [],
+            "conversations": [],
             "performance": [],
             "daily_stats": {},
             "popular_queries": {},
@@ -29,6 +30,7 @@ class LexBelAnalytics:
                 "first_started": datetime.now().isoformat(),
                 "total_queries": 0,
                 "total_users": 0,
+                "total_conversations": 0,
             },
         }
 
@@ -47,6 +49,8 @@ class LexBelAnalytics:
         user_id: Optional[str] = None,
         cost_usd: float = 0.0,
         tokens: int = 0,
+        conversation_id: Optional[str] = None,
+        turn_number: Optional[int] = None,
     ):
         """Log a search query."""
         search_record = {
@@ -59,6 +63,8 @@ class LexBelAnalytics:
             "user_id": user_id or "anonymous",
             "cost_usd": cost_usd,
             "tokens": tokens,
+            "conversation_id": conversation_id,
+            "turn_number": turn_number,
         }
 
         self.data["searches"].append(search_record)
@@ -174,6 +180,62 @@ class LexBelAnalytics:
         df = pd.DataFrame(self.data["performance"])
         df["timestamp"] = pd.to_datetime(df["timestamp"])
         return df
+
+    def log_conversation_start(self, conversation_id: str, user_id: Optional[str] = None):
+        """Log the start of a conversation."""
+        conv_record = {
+            "conversation_id": conversation_id,
+            "user_id": user_id or "anonymous",
+            "started_at": datetime.now().isoformat(),
+            "turns": 0,
+            "total_cost_usd": 0.0,
+            "total_tokens": 0,
+            "ended_at": None,
+        }
+        self.data["conversations"].append(conv_record)
+        self.data["system_info"]["total_conversations"] += 1
+        self._save_metrics()
+
+    def log_conversation_turn(
+        self, conversation_id: str, cost_usd: float = 0.0, tokens: int = 0
+    ):
+        """Log a turn in an ongoing conversation."""
+        for conv in self.data["conversations"]:
+            if conv["conversation_id"] == conversation_id:
+                conv["turns"] += 1
+                conv["total_cost_usd"] += cost_usd
+                conv["total_tokens"] += tokens
+                self._save_metrics()
+                break
+
+    def end_conversation(self, conversation_id: str):
+        """Mark a conversation as ended."""
+        for conv in self.data["conversations"]:
+            if conv["conversation_id"] == conversation_id:
+                conv["ended_at"] = datetime.now().isoformat()
+                self._save_metrics()
+                break
+
+    def get_conversation_stats(self) -> Dict:
+        """Get conversation-level statistics."""
+        if not self.data["conversations"]:
+            return {
+                "total_conversations": 0,
+                "avg_turns_per_conversation": 0,
+                "avg_cost_per_conversation": 0,
+                "active_conversations": 0,
+            }
+
+        active = [c for c in self.data["conversations"] if c["ended_at"] is None]
+        turns = [c["turns"] for c in self.data["conversations"] if c["turns"] > 0]
+        costs = [c["total_cost_usd"] for c in self.data["conversations"]]
+
+        return {
+            "total_conversations": len(self.data["conversations"]),
+            "avg_turns_per_conversation": round(sum(turns) / len(turns), 1) if turns else 0,
+            "avg_cost_per_conversation": round(sum(costs) / len(costs), 4) if costs else 0,
+            "active_conversations": len(active),
+        }
 
     def clear_old_data(self, days: int = 30):
         """Clear data older than specified days."""
