@@ -375,6 +375,43 @@ def get_custom_css() -> str:
     [data-testid="stSidebar"] a[href^="mailto:"]:hover {
         color: var(--lexbel-accent) !important;
     }
+
+    /* Chat interface styling */
+    .stChatMessage {
+        padding: 1rem !important;
+        margin-bottom: 0.75rem !important;
+        border-radius: 0.5rem !important;
+    }
+
+    .stChatMessage[data-testid="user"] {
+        background-color: #e6f3ff !important;
+        border-left: 3px solid var(--lexbel-primary);
+    }
+
+    .stChatMessage[data-testid="assistant"] {
+        background-color: white !important;
+        border-left: 3px solid var(--lexbel-accent);
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    /* Chat input styling */
+    .stChatInput {
+        border: 2px solid var(--lexbel-border) !important;
+        border-radius: 0.5rem !important;
+        padding: 0.75rem !important;
+    }
+
+    .stChatInput:focus {
+        border-color: var(--lexbel-primary) !important;
+        box-shadow: 0 0 0 2px rgba(26, 54, 93, 0.1) !important;
+    }
+
+    /* Follow-up question buttons */
+    .stButton > button {
+        font-size: 0.875rem !important;
+        padding: 0.5rem 0.75rem !important;
+        border-radius: 0.375rem !important;
+    }
     </style>
     """
 
