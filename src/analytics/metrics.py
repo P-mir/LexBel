@@ -19,7 +19,13 @@ class LexBelAnalytics:
         """Load existing metrics or create new."""
         if self.metrics_file.exists():
             with open(self.metrics_file, "r", encoding="utf-8") as f:
-                return json.load(f)
+                data = json.load(f)
+                # Migrate old data to include conversations
+                if "conversations" not in data:
+                    data["conversations"] = []
+                if "total_conversations" not in data.get("system_info", {}):
+                    data.setdefault("system_info", {})["total_conversations"] = 0
+                return data
         return {
             "searches": [],
             "conversations": [],

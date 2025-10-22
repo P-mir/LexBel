@@ -187,6 +187,19 @@ def main():
         - Quels services existent pour les personnes handicapées en Wallonie ?
         """)
 
+    # Sidebar configuration - must come before mode-dependent UI
+    with st.sidebar:
+        st.markdown("### Paramètres de Recherche")
+
+        mode = st.selectbox(
+            "Mode",
+            options=["Assistant Conversationnel", "Récupération Seule"],
+            index=0,
+            help="Assistant Conversationnel: Chat avec mémoire | Récupération: Documents uniquement",
+        )
+
+        vector_store_dir = "data/vector_store"
+
     if mode == "Assistant Conversationnel":
         for message in st.session_state.chat_history:
             with st.chat_message(message["role"]):
@@ -209,6 +222,8 @@ def main():
         if "selected_followup" in st.session_state:
             question = st.session_state.selected_followup
             del st.session_state.selected_followup
+        
+        search_button = False  # Not used in conversational mode
     else:
         question = st.text_area(
             "Votre Question",
@@ -237,16 +252,8 @@ def main():
         if clear_button:
             st.rerun()
 
+    # Continue sidebar configuration
     with st.sidebar:
-        st.markdown("### Paramètres de Recherche")
-
-        mode = st.selectbox(
-            "Mode",
-            options=["Assistant Conversationnel", "Récupération Seule"],
-            index=0,
-            help="Assistant Conversationnel: Chat avec mémoire | Récupération: Documents uniquement",
-        )
-
         vector_store_dir = "data/vector_store"
 
         retriever_type = st.selectbox(
