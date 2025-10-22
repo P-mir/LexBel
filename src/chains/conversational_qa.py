@@ -63,16 +63,59 @@ class ConversationalQA:
 
         return workflow.compile(checkpointer=self.memory)
 
+    def reformulate_query(
+        self, 
+        query: str, 
+        chat_history: list[dict],
+        thread_id: Optional[str] = None
+    ) -> str:
+        """Reformulate query using conversation context to make it standalone."""
+        if not chat_history or len(chat_history) < 2:
+            return query
+        
+        recent_turns = chat_history[-6:]
+        history_text = "\n".join([
+            f"{'Utilisateur' if msg['role'] == 'user' else 'Assistant'}: {msg['content'][:200]}"
+            for msg in recent_turns
+        ])
+        
+        prompt = f"""Étant donné cet historique de conversation juridique:
+
+{history_text}
+
+L'utilisateur pose maintenant cette question de suivi:
+"{query}"
+
+Reformulez cette question en une question autonome et complète qui peut être comprise sans l'historique de la conversation. Gardez le même contexte juridique et la même langue (français).
+
+Question reformulée:"""
+
+        try:
+            result = self.llm.invoke(prompt)
+            reformulated = result.content.strip().strip('"').strip("'")
+            logger.info(f"Query reformulated: '{query}' → '{reformulated}'")
+            return reformulated
+        except Exception as e:
+            logger.error(f"Query reformulation failed: {e}")
+            return query
+
     def query(
         self,
         question: str,
         top_k: int = 5,
         thread_id: Optional[str] = None,
         session_id: Optional[str] = None,
+        chat_history: Optional[list[dict]] = None,
+        enable_reformulation: bool = True,
     ) -> QueryResponse:
         query_start_time = time.time()
         tracer = get_tracer()
         trace = None
+        
+        # Reformulate query if we have conversation history
+        original_question = question
+        if enable_reformulation and chat_history:
+            question = self.reformulate_query(question, chat_history, thread_id)
         
         if tracer.enabled:
             trace = tracer.create_trace(
@@ -84,6 +127,8 @@ class ConversationalQA:
                     "model": self.model_name,
                     "top_k": top_k,
                     "conversation": True,
+                    "original_query": original_question,
+                    "reformulated_query": question if question != original_question else None,
                 },
                 tags=["rag", "conversational", "legal", "chat"],
             )
