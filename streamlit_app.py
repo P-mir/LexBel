@@ -204,7 +204,20 @@ def main():
         for message in st.session_state.chat_history:
             with st.chat_message(message["role"]):
                 st.markdown(message["content"])
-                if message["role"] == "assistant" and message.get("sources"):
+                if message["role"] == "assistant" and message.get("source_objects"):
+                    with st.expander(f"📚 {len(message['source_objects'])} sources"):
+                        for i, src in enumerate(message["source_objects"], 1):
+                            with st.container():
+                                st.markdown(f"**{i}. {src['reference']}** (Score: {src['score']:.3f})")
+                                with st.expander("📄 Voir l'extrait"):
+                                    st.text(src['text'])
+                                    if src.get('metadata'):
+                                        if src['metadata'].get('article_number'):
+                                            st.caption(f"Article: {src['metadata']['article_number']}")
+                                        if src['metadata'].get('section'):
+                                            st.caption(f"Section: {src['metadata']['section']}")
+                elif message["role"] == "assistant" and message.get("sources"):
+                    # Fallback for old messages without source_objects
                     with st.expander(f"📚 {len(message['sources'])} sources"):
                         for i, src in enumerate(message["sources"], 1):
                             st.caption(f"**{i}.** {src}")
@@ -424,7 +437,9 @@ def main():
                         question,
                         top_k=top_k,
                         thread_id=st.session_state.session_id,
-                        session_id=st.session_state.session_id
+                        session_id=st.session_state.session_id,
+                        chat_history=st.session_state.chat_history,
+                        enable_reformulation=True,
                     )
                     total_time_ms = (time.time() - start_time) * 1000
                     
@@ -444,6 +459,15 @@ def main():
                         "role": "assistant",
                         "content": response.answer,
                         "sources": [s.reference for s in response.sources],
+                        "source_objects": [
+                            {
+                                "reference": s.reference,
+                                "text": s.text[:500] + "..." if len(s.text) > 500 else s.text,
+                                "score": s.score,
+                                "metadata": s.metadata,
+                            }
+                            for s in response.sources
+                        ],
                         "cost_usd": response.retrieval_details.get("cost_usd", 0),
                         "tokens": response.retrieval_details.get("total_tokens", 0),
                         "followup_questions": followup_questions,
