@@ -221,7 +221,7 @@ def main():
                     with st.expander(f"📚 {len(message['sources'])} sources"):
                         for i, src in enumerate(message["sources"], 1):
                             st.caption(f"**{i}.** {src}")
-                
+
                 if message["role"] == "assistant" and message.get("followup_questions"):
                     st.markdown("**Questions suggérées:**")
                     cols = st.columns(len(message["followup_questions"]))
@@ -231,11 +231,11 @@ def main():
                                 st.session_state.selected_followup = q
 
         question = st.chat_input("Posez votre question sur le droit belge...")
-        
+
         if "selected_followup" in st.session_state:
             question = st.session_state.selected_followup
             del st.session_state.selected_followup
-        
+
         search_button = False  # Not used in conversational mode
     else:
         question = st.text_area(
@@ -442,10 +442,10 @@ def main():
                         enable_reformulation=True,
                     )
                     total_time_ms = (time.time() - start_time) * 1000
-                    
+
                     followup_questions = qa_chain.generate_followup_questions(
-                        context="", 
-                        answer=response.answer, 
+                        context="",
+                        answer=response.answer,
                         n=2
                     )
 
@@ -462,7 +462,7 @@ def main():
                         "source_objects": [
                             {
                                 "reference": s.reference,
-                                "text": s.text[:500] + "..." if len(s.text) > 500 else s.text,
+                                "text": s.text,
                                 "score": s.score,
                                 "metadata": s.metadata,
                             }
@@ -485,7 +485,7 @@ def main():
                         conversation_id=st.session_state.session_id,
                         turn_number=len(st.session_state.chat_history) // 2,
                     )
-                    
+
                     analytics.log_conversation_turn(
                         conversation_id=st.session_state.session_id,
                         cost_usd=response.retrieval_details.get("cost_usd", 0.0),
