@@ -19,7 +19,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 from analytics.metrics import LexBelAnalytics  # noqa: E402
-from chains import ConversationalQA, LangChainQA  # noqa: E402
+from chains import ConversationalQA  # noqa: E402
 from embeddings import CloudEmbedder  # noqa: E402
 from observability import generate_session_id, get_tracer  # noqa: E402
 from retrievers import HybridRetriever, MMRRetriever  # noqa: E402
@@ -208,13 +208,17 @@ def main():
                     with st.expander(f"📚 {len(message['source_objects'])} sources"):
                         for i, src in enumerate(message["source_objects"], 1):
                             with st.container():
-                                st.markdown(f"**{i}. {src['reference']}** (Score: {src['score']:.3f})")
+                                st.markdown(
+                                    f"**{i}. {src['reference']}** (Score: {src['score']:.3f})"
+                                )
                                 with st.expander("📄 Voir l'extrait"):
-                                    st.text(src['text'])
-                                    if src.get('metadata'):
-                                        if src['metadata'].get('article_number'):
-                                            st.caption(f"Article: {src['metadata']['article_number']}")
-                                        if src['metadata'].get('section'):
+                                    st.text(src["text"])
+                                    if src.get("metadata"):
+                                        if src["metadata"].get("article_number"):
+                                            st.caption(
+                                                f"Article: {src['metadata']['article_number']}"
+                                            )
+                                        if src["metadata"].get("section"):
                                             st.caption(f"Section: {src['metadata']['section']}")
                 elif message["role"] == "assistant" and message.get("sources"):
                     # Fallback for old messages without source_objects
@@ -227,7 +231,11 @@ def main():
                     cols = st.columns(len(message["followup_questions"]))
                     for i, (col, q) in enumerate(zip(cols, message["followup_questions"])):
                         with col:
-                            if st.button(q, key=f"followup_{message.get('timestamp', 0)}_{i}", use_container_width=True):
+                            if st.button(
+                                q,
+                                key=f"followup_{message.get('timestamp', 0)}_{i}",
+                                use_container_width=True,
+                            ):
                                 st.session_state.selected_followup = q
 
         question = st.chat_input("Posez votre question sur le droit belge...")
@@ -369,7 +377,9 @@ def main():
         st.error("Veuillez vérifier la configuration du système.")
         return
 
-    should_process = (mode == "Assistant Conversationnel" and question) or (search_button and question)
+    should_process = (mode == "Assistant Conversationnel" and question) or (
+        search_button and question
+    )
 
     if should_process:
         token_estimate = len(question) // 4
@@ -444,35 +454,33 @@ def main():
                     total_time_ms = (time.time() - start_time) * 1000
 
                     followup_questions = qa_chain.generate_followup_questions(
-                        context="",
-                        answer=response.answer,
-                        n=2
+                        context="", answer=response.answer, n=2
                     )
 
-                    st.session_state.chat_history.append({
-                        "role": "user",
-                        "content": question,
-                        "timestamp": time.time()
-                    })
+                    st.session_state.chat_history.append(
+                        {"role": "user", "content": question, "timestamp": time.time()}
+                    )
 
-                    st.session_state.chat_history.append({
-                        "role": "assistant",
-                        "content": response.answer,
-                        "sources": [s.reference for s in response.sources],
-                        "source_objects": [
-                            {
-                                "reference": s.reference,
-                                "text": s.text,
-                                "score": s.score,
-                                "metadata": s.metadata,
-                            }
-                            for s in response.sources
-                        ],
-                        "cost_usd": response.retrieval_details.get("cost_usd", 0),
-                        "tokens": response.retrieval_details.get("total_tokens", 0),
-                        "followup_questions": followup_questions,
-                        "timestamp": time.time()
-                    })
+                    st.session_state.chat_history.append(
+                        {
+                            "role": "assistant",
+                            "content": response.answer,
+                            "sources": [s.reference for s in response.sources],
+                            "source_objects": [
+                                {
+                                    "reference": s.reference,
+                                    "text": s.text,
+                                    "score": s.score,
+                                    "metadata": s.metadata,
+                                }
+                                for s in response.sources
+                            ],
+                            "cost_usd": response.retrieval_details.get("cost_usd", 0),
+                            "tokens": response.retrieval_details.get("total_tokens", 0),
+                            "followup_questions": followup_questions,
+                            "timestamp": time.time(),
+                        }
+                    )
 
                     analytics.log_search(
                         query=question,

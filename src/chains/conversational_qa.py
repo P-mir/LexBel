@@ -64,21 +64,20 @@ class ConversationalQA:
         return workflow.compile(checkpointer=self.memory)
 
     def reformulate_query(
-        self, 
-        query: str, 
-        chat_history: list[dict],
-        thread_id: Optional[str] = None
+        self, query: str, chat_history: list[dict], thread_id: Optional[str] = None
     ) -> str:
         """Reformulate query using conversation context to make it standalone."""
         if not chat_history or len(chat_history) < 2:
             return query
-        
+
         recent_turns = chat_history[-6:]
-        history_text = "\n".join([
-            f"{'Utilisateur' if msg['role'] == 'user' else 'Assistant'}: {msg['content'][:200]}"
-            for msg in recent_turns
-        ])
-        
+        history_text = "\n".join(
+            [
+                f"{'Utilisateur' if msg['role'] == 'user' else 'Assistant'}: {msg['content'][:200]}"
+                for msg in recent_turns
+            ]
+        )
+
         prompt = f"""Étant donné cet historique de conversation juridique:
 
 {history_text}
@@ -111,12 +110,12 @@ Question reformulée:"""
         query_start_time = time.time()
         tracer = get_tracer()
         trace = None
-        
+
         # Reformulate query if we have conversation history
         original_question = question
         if enable_reformulation and chat_history:
             question = self.reformulate_query(question, chat_history, thread_id)
-        
+
         if tracer.enabled:
             trace = tracer.create_trace(
                 name="conversational_rag_query",
@@ -132,21 +131,20 @@ Question reformulée:"""
                 },
                 tags=["rag", "conversational", "legal", "chat"],
             )
-        
+
         retrieval_start = time.time()
 
         logger.info(f"Retrieving documents for: {question[:100]}...")
-        
+
         retrieval_span = None
         if tracer.enabled and trace:
             retrieval_span = trace.start_span(
-                name="retrieval",
-                input={"question": question, "top_k": top_k}
+                name="retrieval", input={"question": question, "top_k": top_k}
             )
-        
+
         sources = self.retriever.retrieve(question, top_k=top_k)
         retrieval_duration = time.time() - retrieval_start
-        
+
         if retrieval_span:
             avg_score = sum(s.score for s in sources) / len(sources) if sources else 0
             retrieval_span.update(
@@ -166,7 +164,7 @@ Question reformulée:"""
                 sources=[],
                 retrieval_details={"num_sources": 0},
             )
-            
+
             if trace:
                 trace.update(
                     output={"answer": response.answer, "num_sources": 0},
@@ -174,7 +172,7 @@ Question reformulée:"""
                 )
                 trace.end()
                 tracer.flush()
-            
+
             return response
 
         context_parts = []
@@ -194,7 +192,9 @@ Instructions:
 4. Maintiens la cohérence avec la conversation précédente
 5. Sois précis et concis"""
 
-        input_tokens = estimate_tokens(context) + estimate_tokens(question) + estimate_tokens(system_prompt)
+        input_tokens = (
+            estimate_tokens(context) + estimate_tokens(question) + estimate_tokens(system_prompt)
+        )
 
         logger.info("Generating answer with LLM...")
         generation_start = time.time()
@@ -209,7 +209,7 @@ Instructions:
 
             output_tokens = estimate_tokens(answer)
             cost_info = calculate_cost(self.model_name, input_tokens, output_tokens)
-            
+
             if tracer.enabled and trace:
                 generation = trace.start_observation(
                     as_type="generation",
@@ -233,7 +233,7 @@ Instructions:
             logger.error(f"LLM generation failed: {e}")
             answer = f"Erreur lors de la génération de la réponse: {e}"
             cost_info = {"total_cost": 0, "input_tokens": 0, "output_tokens": 0}
-            
+
             if tracer.enabled and trace:
                 error_span = trace.start_span(
                     name="generation_error",
@@ -253,17 +253,22 @@ Instructions:
                 "retrieval_method": type(self.retriever).__name__,
                 "llm_type": "cloud",
                 "cost_usd": cost_info.get("total_cost", 0),
-                "total_tokens": cost_info.get("input_tokens", 0) + cost_info.get("output_tokens", 0),
+                "total_tokens": cost_info.get("input_tokens", 0)
+                + cost_info.get("output_tokens", 0),
             },
         )
 
         if tracer.enabled and trace:
             trace.update(
-                output={"answer": answer, "sources": [s.metadata.get("title", "Unknown") for s in sources]},
+                output={
+                    "answer": answer,
+                    "sources": [s.metadata.get("title", "Unknown") for s in sources],
+                },
                 metadata={
                     "total_duration_ms": (time.time() - query_start_time) * 1000,
                     "total_cost_usd": cost_info.get("total_cost", 0),
-                    "total_tokens": cost_info.get("input_tokens", 0) + cost_info.get("output_tokens", 0),
+                    "total_tokens": cost_info.get("input_tokens", 0)
+                    + cost_info.get("output_tokens", 0),
                 },
             )
             trace.end()
@@ -281,7 +286,7 @@ Réponse: {answer[:500]}
 Génère uniquement les questions, une par ligne, sans numérotation ni tirets."""
 
             result = self.llm.invoke(prompt)
-            questions = [q.strip() for q in result.content.strip().split('\n') if q.strip()]
+            questions = [q.strip() for q in result.content.strip().split("\n") if q.strip()]
             return questions[:n]
         except Exception as e:
             logger.error(f"Failed to generate follow-up questions: {e}")

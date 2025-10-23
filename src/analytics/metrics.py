@@ -202,9 +202,7 @@ class LexBelAnalytics:
         self.data["system_info"]["total_conversations"] += 1
         self._save_metrics()
 
-    def log_conversation_turn(
-        self, conversation_id: str, cost_usd: float = 0.0, tokens: int = 0
-    ):
+    def log_conversation_turn(self, conversation_id: str, cost_usd: float = 0.0, tokens: int = 0):
         """Log a turn in an ongoing conversation."""
         for conv in self.data["conversations"]:
             if conv["conversation_id"] == conversation_id:
