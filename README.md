@@ -2,11 +2,8 @@
 
 > **Intelligent Legal Search for Belgian Law** — Production RAG system that makes Belgian legal code accessible through natural language queries.
 
-[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
-[![Streamlit](https://img.shields.io/badge/streamlit-1.25+-FF4B4B.svg)](https://streamlit.io)
-[![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
 
----
+
 
 ## What is LexBel?
 

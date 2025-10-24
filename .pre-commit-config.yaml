@@ -27,6 +27,6 @@ repos:
 
 # Security scanner for finding  vulnerabilities
 - repo: https://github.com/PyCQA/bandit
-  rev: '1.8.6' # TODO: Use a recent version here !
+  rev: '1.8.6' # TODO: try to keep a recent version here !
   hooks:
   - id: bandit

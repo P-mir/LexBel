@@ -41,8 +41,6 @@ class LegalArticle:
 
 @dataclass
 class TextChunk:
-    """Represents a chunk of text with metadata."""
-
     chunk_id: str
     original_text: str
     article_id: int
@@ -56,7 +54,6 @@ class TextChunk:
     metadata: Dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
-        """Convert to dictionary."""
         return {
             "chunk_id": self.chunk_id,
             "original_text": self.original_text,
