@@ -9,10 +9,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Add src to path
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
-# Configure logging
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
@@ -32,7 +30,6 @@ from vector_store import FAISSVectorStore  # noqa: E402
 
 logger = setup_logger(__name__)
 
-# Page config - MUST BE FIRST STREAMLIT COMMAND
 st.set_page_config(
     page_title="LexBel - Intelligence Juridique Belge",
     page_icon="⚖️",
@@ -55,7 +52,6 @@ def load_system(vector_store_dir: str, retriever_type: str):
     """Load and cache the RAG system."""
     vector_store_path = Path(vector_store_dir)
 
-    # Load config
     config = load_json(vector_store_path / "config.json")
     embedding_dim = config["embedding_dim"]
 
@@ -67,7 +63,6 @@ def load_system(vector_store_dir: str, retriever_type: str):
     chunks_metadata = load_json(vector_store_path / "chunks_metadata.json")
     chunks = [TextChunk(**chunk_data) for chunk_data in chunks_metadata]
 
-    # Initialize retriever
     if retriever_type == "mmr":
         retriever = MMRRetriever(
             vector_store=vector_store,
@@ -311,7 +306,7 @@ def main():
                 "MMR Lambda (λ)",
                 min_value=0.0,
                 max_value=1.0,
-                value=0.5,
+                value=0.8,
                 step=0.1,
                 help="0.0 = diversité max | 1.0 = pertinence max",
             )
