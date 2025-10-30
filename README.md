@@ -31,7 +31,7 @@ the corpus of articles support the RAG system comprise 32 Belgian codes, collect
 ### Prerequisites
 
 - Python 3.11+
-- Docker & Docker Compose (optional but recommended)
+- Docker & Docker Compose
 - Mistral API key ([get one here](https://console.mistral.ai/))
 
 ### Installation
@@ -67,7 +67,7 @@ Visit `http://localhost:8501`
 - `FAISS` — High performance Vector similarity search with
 - **MMR (Maximal Marginal Relevance)** for diversity-aware retrieval
   - **Hybrid search** combining dense vectors + BM25 lexical matching
-- `LangChain` & `LlamaIndex` — RAG orchestration
+- `LangChain` & `LangGraph` — RAG orchestration & Agentic workflow
 - `Mistral AI` — LLM for answer generation (mistral-small-latest)
 - `Langfuse` — observability and tracing
 
@@ -178,3 +178,4 @@ track key metrics: query volumes, costs, tokens, latency metrics (P50/P95/P99).
 ```
 
 </details>
+
