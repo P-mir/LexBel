@@ -1,6 +1,6 @@
 # LexBel 🇧🇪
 
-> **Intelligent Legal Search for Belgian Law** — Production RAG system that makes Belgian legal code accessible through natural language queries.
+> **Intelligent Legal Search for Belgian Law** — Production conversational RAG system that makes Belgian legal code accessible through natural language queries.
 
 
 
@@ -178,4 +178,5 @@ track key metrics: query volumes, costs, tokens, latency metrics (P50/P95/P99).
 ```
 
 </details>
+
 
