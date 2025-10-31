@@ -20,7 +20,7 @@ https://github.com/user-attachments/assets/4271e1c9-f67f-417c-b058-fb79678b8e1e
 
 ## Covered Legal Codes
 
-the corpus of articles support the RAG system comprise 32 Belgian codes, collected in May 2021 by Louis, A., & Spanakis, G.
+the corpus supporting the RAG system comprises 22,633 articles from 32 Belgian codes, collected in May 2021 by Antoine Louis and Gerasimos Spanakis.
 
 > [!WARNING]
 > Users might notice several limitations:
@@ -35,7 +35,7 @@ the corpus of articles support the RAG system comprise 32 Belgian codes, collect
 
 - Python 3.11+
 - Docker & Docker Compose
-- Mistral API key ([get one here](https://console.mistral.ai/))
+- Mistral API key
 
 ### Installation
 
@@ -70,27 +70,24 @@ Visit `http://localhost:8501`
 - `FAISS` — High performance Vector similarity search with
 - **MMR (Maximal Marginal Relevance)** for diversity-aware retrieval
   - **Hybrid search** combining dense vectors + BM25 lexical matching
-- `LangChain` & `LangGraph` — RAG orchestration & Agentic workflow
-- `Mistral AI` — LLM for answer generation (mistral-small-latest)
+- `LangChain` & `LangGraph` for RAG orchestration & Agentic workflow
+- `Mistral AI` for answer generation (mistral-small-latest)
 - `Langfuse` — observability and tracing
 
 **Application Layer**
-- `Streamlit` — Interactive web interface
-- `Pandas`
-- `Plotly`
+ `Streamlit`, `Pandas`, `Plotly`
 
 **Infrastructure & devops**
 - `AWS ECS` + `Fargate`
 - `Docker`
-- `uv` — Fast (er than poetry) dependency management
+- `uv` — Fast(er than poetry) dependency management
 - `pytest`
 
 **Code Quality & Security**
-
+- Modularity & separations of concerns
 - pre-commit hooks
 - Type hints with mypy
 - Logging (`logs/ingestion.log`)
-- Modularity & separations of concerns
 - Bandit for vulnerability scanning
 
 
@@ -103,12 +100,10 @@ from src.chains.langchain_qa import LangChainQA
 from src.embeddings.cloud_embedder import CloudEmbedder
 from src.vector_store.faiss_store import FAISSVectorStore
 
-# Initialize components
 embedder = CloudEmbedder()
 vector_store = FAISSVectorStore.load("data/vector_store")
 qa_chain = LangChainQA(vector_store, embedder)
 
-# Ask a question
 result = qa_chain.query(
     "Quelle est la durée de validité d'un certificat PEB ?",
     top_k=5
@@ -153,6 +148,7 @@ track key metrics: query volumes, costs, tokens, latency metrics (P50/P95/P99).
 1. Add CSV file to `data/` with columns: `id`, `article_number`, `article_text`, `code_name`
 2. Run ingestion: `python scripts/ingest.py --input data/new_code.csv`
 3. Vector store automatically updates
+4. Deploy to aws through Github Action workflow
 
 ### Dataset Citation
 
@@ -181,6 +177,3 @@ track key metrics: query volumes, costs, tokens, latency metrics (P50/P95/P99).
 ```
 
 </details>
-
-
-
