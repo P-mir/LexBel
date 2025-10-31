@@ -12,7 +12,10 @@ LexBel allows citizens to ask juridic questions answered by an LLM anchored to a
 ### Demo
 
 
-https://github.com/user-attachments/assets/b52fa5de-ecf9-4210-a7a2-564d15aa63ae
+
+https://github.com/user-attachments/assets/4271e1c9-f67f-417c-b058-fb79678b8e1e
+
+
 
 
 ## Covered Legal Codes
@@ -178,5 +181,6 @@ track key metrics: query volumes, costs, tokens, latency metrics (P50/P95/P99).
 ```
 
 </details>
+
 
 
