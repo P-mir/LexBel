@@ -47,49 +47,90 @@ def render_mode_selector():
 
 def render_chat_history(chat_history):
     for message in chat_history:
-        with st.chat_message(message["role"]):
-            st.markdown(message["content"])
+        if message["role"] == "assistant":
+            with st.chat_message(message["role"], avatar="🔹"):
+                st.markdown(message["content"])
 
-            if message["role"] == "assistant" and message.get("source_objects"):
-                with st.expander(f"📚 {len(message['source_objects'])} sources"):
-                    for i, src in enumerate(message["source_objects"], 1):
-                        with st.container():
-                            st.markdown(f"**{i}. {src['reference']}** (Score: {src['score']:.3f})")
-                            with st.expander("📄 Voir l'extrait"):
-                                st.text(src["text"])
-                                if src.get("metadata"):
-                                    if src["metadata"].get("article_number"):
-                                        st.caption(f"Article: {src['metadata']['article_number']}")
-                                    if src["metadata"].get("section"):
-                                        st.caption(f"Section: {src['metadata']['section']}")
-            elif message["role"] == "assistant" and message.get("sources"):
-                # old format compatibility
-                with st.expander(f"📚 {len(message['sources'])} sources"):
-                    for i, src in enumerate(message["sources"], 1):
-                        st.caption(f"**{i}.** {src}")
+                if message.get("source_objects"):
+                    with st.expander(f"📚 {len(message['source_objects'])} sources"):
+                        for i, src in enumerate(message["source_objects"], 1):
+                            with st.container():
+                                st.markdown(
+                                    f"**{i}. {src['reference']}** (Score: {src['score']:.3f})"
+                                )
+                                with st.expander("📄 Voir l'extrait"):
+                                    st.text(src["text"])
+                                    if src.get("metadata"):
+                                        if src["metadata"].get("article_number"):
+                                            st.caption(
+                                                f"Article: {src['metadata']['article_number']}"
+                                            )
+                                        if src["metadata"].get("section"):
+                                            st.caption(f"Section: {src['metadata']['section']}")
+                elif message.get("sources"):
+                    # old format compatibility
+                    with st.expander(f"📚 {len(message['sources'])} sources"):
+                        for i, src in enumerate(message["sources"], 1):
+                            st.caption(f"**{i}.** {src}")
 
-            if message["role"] == "assistant" and message.get("followup_questions"):
-                st.markdown("**Questions suggérées:**")
-                cols = st.columns(len(message["followup_questions"]))
-                for i, (col, q) in enumerate(zip(cols, message["followup_questions"])):
-                    with col:
-                        if st.button(
-                            q,
-                            key=f"followup_{message.get('timestamp', 0)}_{i}",
-                            use_container_width=True,
-                        ):
-                            st.session_state.selected_followup = q
+                if message.get("followup_questions"):
+                    st.markdown("**Questions suggérées:**")
+                    cols = st.columns(len(message["followup_questions"]))
+                    for i, (col, q) in enumerate(zip(cols, message["followup_questions"])):
+                        with col:
+                            if st.button(
+                                q,
+                                key=f"followup_{message.get('timestamp', 0)}_{i}",
+                                use_container_width=True,
+                            ):
+                                st.session_state.selected_followup = q
+        else:
+            with st.chat_message(message["role"], avatar="🟢"):
+                st.markdown(message["content"])
 
 
 def get_conversational_input():
-    question = st.chat_input("Posez votre question sur le droit belge...")
+    import logging
 
-    # handle followup questions if user clicked one
+    logger = logging.getLogger(__name__)
+
+    # check for followup question first (set by button click in previous render)
     if "selected_followup" in st.session_state:
         question = st.session_state.selected_followup
+        logger.info(f"🔵 Found selected_followup: {question}")
         del st.session_state.selected_followup
+        st.session_state.latest_followup_questions = []
+        return question
 
+    question = st.chat_input("Posez votre question sur le droit belge...")
+    if question:
+        logger.info(f"🟢 Got question from chat_input: {question}")
     return question
+
+
+def render_followup_questions():
+    import logging
+
+    logger = logging.getLogger(__name__)
+
+    logger.info(
+        f"🔵 render_followup_questions called. Session state has: {st.session_state.get('latest_followup_questions', 'NONE')}"
+    )
+
+    if st.session_state.get("latest_followup_questions"):
+        logger.info(
+            f"🟢 Rendering {len(st.session_state.latest_followup_questions)} followup questions"
+        )
+        st.markdown("**Questions suggérées:**")
+        cols = st.columns(len(st.session_state.latest_followup_questions))
+        for i, (col, q) in enumerate(zip(cols, st.session_state.latest_followup_questions)):
+            with col:
+                button_key = f"followup_{hash(q)}_{i}"
+                if st.button(q, key=button_key, use_container_width=True):
+                    logger.info(f"🟡 Button clicked! Setting selected_followup: {q}")
+                    st.session_state.selected_followup = q
+                    st.session_state.latest_followup_questions = []
+                    st.rerun()
 
 
 def get_retrieval_input():
@@ -140,7 +181,6 @@ def render_retriever_settings(mode, analytics, session_state):
     )
 
     if mode == "Assistant Conversationnel":
-        st.markdown("---")
         if st.button("🔄 Nouvelle Conversation", use_container_width=True):
             if len(session_state.chat_history) > 0:
                 analytics.end_conversation(session_state.session_id)
@@ -153,7 +193,10 @@ def render_retriever_settings(mode, analytics, session_state):
 
 
 def render_advanced_params(retriever_type):
-    st.markdown("### Paramètres Avancés")
+    st.markdown(
+        '<h3 style="margin-top: 0.3rem; margin-bottom: 0.5rem;">Paramètres Avancés</h3>',
+        unsafe_allow_html=True,
+    )
 
     if retriever_type == "mmr":
         mmr_lambda = st.slider(
@@ -180,14 +223,14 @@ def render_advanced_params(retriever_type):
 def render_system_stats(config):
     st.markdown(
         f"""
-        <div style="display: flex; justify-content: space-around; margin: 1rem 0;">
+        <div style="display: flex; justify-content: space-around; margin: 0.3rem 0;">
             <div style="text-align: center;">
-                <div style="font-size: 0.9rem; color: rgba(255,255,255,0.8); margin-bottom: 0.25rem;">Articles</div>
-                <div style="font-size: 1.5rem; font-weight: bold; color: white;">{config.get("num_articles", "N/A"):,}</div>
+                <div style="font-size: 0.8rem; color: rgba(255,255,255,0.8); margin-bottom: 0.15rem;">Articles</div>
+                <div style="font-size: 1.3rem; font-weight: bold; color: white;">{config.get("num_articles", "N/A"):,}</div>
             </div>
             <div style="text-align: center;">
-                <div style="font-size: 0.9rem; color: rgba(255,255,255,0.8); margin-bottom: 0.25rem;">Chunks</div>
-                <div style="font-size: 1.5rem; font-weight: bold; color: white;">{config.get("num_chunks", "N/A"):,}</div>
+                <div style="font-size: 0.8rem; color: rgba(255,255,255,0.8); margin-bottom: 0.15rem;">Chunks</div>
+                <div style="font-size: 1.3rem; font-weight: bold; color: white;">{config.get("num_chunks", "N/A"):,}</div>
             </div>
         </div>
         """,
@@ -196,10 +239,9 @@ def render_system_stats(config):
 
 
 def render_footer_contact():
-    st.markdown("---")
     st.markdown(
         """
-        <div style="text-align: center; font-size: 0.75rem; margin-top: 2rem;">
+        <div style="text-align: center; font-size: 0.75rem; margin-top: 0.5rem; margin-bottom: 0.5rem;">
             <a href="mailto:ptrk.miro@gmail.com" style="color: white; text-decoration: none; opacity: 0.7; transition: opacity 0.3s;">
                 📧 ptrk.miro@gmail.com
             </a>
@@ -242,10 +284,10 @@ def render_retrieval_results(sources, retrieval_time_ms):
 def render_page_footer():
     st.markdown(
         """
-        <div class="lexbel-footer">
-            <strong>LexBel</strong> - Intelligence Juridique Belge<br/>
-            Système RAG pour le droit belge<br/>
-            <a href="https://github.com/P-mir/LexBel" target="_blank" style="color: var(--lexbel-gray); font-size: 1.0rem; text-decoration: none; opacity: 0.7; transition: opacity 0.3s;">
+        <div style="text-align: center; font-size: 1.0rem; margin-top: 0.5rem; padding: 0.5rem 0; background-color: transparent;">
+            <strong style="color: white;">LexBel</strong> <span style="color: rgba(255,255,255,0.7);">- Intelligence Juridique Belge</span><br/>
+            <span style="color: rgba(255,255,255,0.6); font-size: 1.0rem;">Système RAG pour le droit belge</span><br/>
+            <a href="https://github.com/P-mir/LexBel" target="_blank" style="color: rgba(255,255,255,0.6); font-size: 1.0rem; text-decoration: none; opacity: 0.7; transition: opacity 0.3s;">
                  GitHub Repository
             </a>
         </div>

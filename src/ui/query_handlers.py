@@ -30,31 +30,45 @@ def process_conversational_query(question, retriever, top_k, analytics):
 
     qa_chain = ConversationalQA(retriever=retriever)
 
-    response = qa_chain.query(
-        question,
-        top_k=top_k,
-        thread_id=st.session_state.session_id,
-        session_id=st.session_state.session_id,
-        chat_history=st.session_state.chat_history,
-        enable_reformulation=True,
-    )
-    total_time_ms = (time.time() - start_time) * 1000
-
-    followup_questions = qa_chain.generate_followup_questions(
-        context="", answer=response.answer, n=2
-    )
-
-    # add user message to chat history
     st.session_state.chat_history.append(
         {"role": "user", "content": question, "timestamp": time.time()}
     )
 
-    # add assistant response to chat history
+    placeholder = st.empty()
+
+    with placeholder.container():
+        with st.chat_message("assistant", avatar="🔹"):
+            message_placeholder = st.empty()
+        full_response = ""
+        sources = None
+        retrieval_details = None
+
+        for chunk, chunk_sources, chunk_details in qa_chain.query_stream(
+            question,
+            top_k=top_k,
+            thread_id=st.session_state.session_id,
+            session_id=st.session_state.session_id,
+            chat_history=st.session_state.chat_history,
+            enable_reformulation=False,
+        ):
+            if chunk:
+                full_response += chunk
+                message_placeholder.markdown(full_response + "▌")
+            if chunk_sources is not None:
+                sources = chunk_sources
+            if chunk_details is not None:
+                retrieval_details = chunk_details
+
+        message_placeholder.markdown(full_response)
+
+    total_time_ms = (time.time() - start_time) * 1000
+
+    # Save to chat history FIRST, before generating followup questions
     st.session_state.chat_history.append(
         {
             "role": "assistant",
-            "content": response.answer,
-            "sources": [s.reference for s in response.sources],
+            "content": full_response,
+            "sources": [s.reference for s in sources] if sources else [],
             "source_objects": [
                 {
                     "reference": s.reference,
@@ -62,31 +76,51 @@ def process_conversational_query(question, retriever, top_k, analytics):
                     "score": s.score,
                     "metadata": s.metadata,
                 }
-                for s in response.sources
-            ],
-            "cost_usd": response.retrieval_details.get("cost_usd", 0),
-            "tokens": response.retrieval_details.get("total_tokens", 0),
-            "followup_questions": followup_questions,
+                for s in sources
+            ]
+            if sources
+            else [],
+            "cost_usd": retrieval_details.get("cost_usd", 0) if retrieval_details else 0,
+            "tokens": retrieval_details.get("total_tokens", 0) if retrieval_details else 0,
             "timestamp": time.time(),
         }
     )
 
-    analytics.log_search(
-        query=question,
-        retriever_type="conversational",
-        num_results=len(response.sources),
-        retrieval_time_ms=total_time_ms,
-        sources=[s.reference for s in response.sources],
-        cost_usd=response.retrieval_details.get("cost_usd", 0.0),
-        tokens=response.retrieval_details.get("total_tokens", 0),
-        conversation_id=st.session_state.session_id,
-        turn_number=len(st.session_state.chat_history) // 2,
-    )
+    followup_questions = []
+    if full_response and sources:
+        try:
+            followup_questions = qa_chain.generate_followup_questions(
+                context="", answer=full_response, n=2
+            )
+            logger.info(
+                f"🟢 Generated {len(followup_questions)} followup questions: {followup_questions}"
+            )
+            if followup_questions:
+                st.session_state.latest_followup_questions = followup_questions
+                logger.info("🟢 Stored in session_state.latest_followup_questions")
+                logger.info("🔄 Triggering rerun to display followup questions")
+                st.rerun()
+        except Exception as e:
+            logger.warning(f"Failed to generate followup questions: {e}")
+            st.session_state.latest_followup_questions = []
+    else:
+        st.session_state.latest_followup_questions = []
 
-    analytics.log_conversation_turn(
-        conversation_id=st.session_state.session_id,
-        cost_usd=response.retrieval_details.get("cost_usd", 0.0),
-        tokens=response.retrieval_details.get("total_tokens", 0),
-    )
+    if retrieval_details and sources:
+        analytics.log_search(
+            query=question,
+            retriever_type="conversational",
+            num_results=len(sources),
+            retrieval_time_ms=total_time_ms,
+            sources=[s.reference for s in sources],
+            cost_usd=retrieval_details.get("cost_usd", 0.0),
+            tokens=retrieval_details.get("total_tokens", 0),
+            conversation_id=st.session_state.session_id,
+            turn_number=len(st.session_state.chat_history) // 2,
+        )
 
-    st.rerun()
+        analytics.log_conversation_turn(
+            conversation_id=st.session_state.session_id,
+            cost_usd=retrieval_details.get("cost_usd", 0.0),
+            tokens=retrieval_details.get("total_tokens", 0),
+        )

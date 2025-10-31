@@ -23,7 +23,6 @@ from ui.components import (  # noqa: E402
     get_retrieval_input,
     render_advanced_params,
     render_chat_history,
-    render_footer_contact,
     render_header,
     render_mode_selector,
     render_page_footer,
@@ -137,8 +136,6 @@ def main():
 
         page = render_page_navigation()
 
-        st.markdown("---")
-
     # Main content based on page selection
     if page == "📊 Tableau de Bord":
         render_dashboard(analytics.get_dashboard_stats())
@@ -150,7 +147,10 @@ def main():
 
     # Sidebar configuration - must come before mode-dependent UI
     with st.sidebar:
-        st.markdown("### Paramètres de Recherche")
+        st.markdown(
+            '<h3 style="margin-top: 0.1rem; margin-bottom: 0.1rem;">Paramètres de Recherche</h3>',
+            unsafe_allow_html=True,
+        )
 
         mode = render_mode_selector()
 
@@ -159,10 +159,15 @@ def main():
     if mode == "Assistant Conversationnel":
         render_chat_history(st.session_state.chat_history)
         question = get_conversational_input()
+
+        # render followup questions if available (after chat input)
+        from ui.components import render_followup_questions
+
+        render_followup_questions()
+
         search_button = False  # not used for chat bot
     else:
         question, search_button = get_retrieval_input()
-
     # sidebar settings
     with st.sidebar:
         vector_store_dir = "data/vector_store"
@@ -170,8 +175,6 @@ def main():
         retriever_type, top_k = render_retriever_settings(mode, analytics, st.session_state)
 
         render_advanced_params(retriever_type)
-
-        st.markdown("---")
 
     # this preloading helps reduce waiting time when searching
     loading_placeholder = st.sidebar.empty()
@@ -188,13 +191,13 @@ def main():
             render_system_stats(config)
 
         with st.sidebar:
-            render_footer_contact()
+            render_page_footer()
 
     except Exception as e:
         loading_placeholder.empty()
         logger.error(f"Failed to load system: {e}", exc_info=True)
         st.sidebar.error(f"❌ Erreur: {e}")
-        st.error("Veuillez vérifier la configuration du système.")
+        st.error("Veuill vérifier la configuration du système.")
         return
 
     should_process = (mode == "Assistant Conversationnel" and question) or (
@@ -219,8 +222,6 @@ def main():
             except Exception as e:
                 st.error(f"❌ Erreur lors du traitement: {e}")
                 logger.error(f"Query error: {e}", exc_info=True)
-
-    render_page_footer()
 
 
 if __name__ == "__main__":
