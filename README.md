@@ -12,8 +12,7 @@ LexBel allows citizens to ask juridic questions answered by an LLM anchored to a
 ### Demo
 
 
-
-https://github.com/user-attachments/assets/4271e1c9-f67f-417c-b058-fb79678b8e1e
+https://github.com/user-attachments/assets/0640f649-9e5a-40ea-9cda-968f1320843a
 
 
 
@@ -25,6 +24,7 @@ the corpus of articles support the RAG system comprise 32 Belgian codes, collect
 > [!WARNING]
 > Users might notice several limitations:
 
+> - **Laterncy** : To save cost the AWS ECS task used on the demo url use 0.5 vCPU and 2Gb RAM only. Thus despite a few optimizations (vector store preloading, llm token streaming, mmr retrieval with vectorized numpy and broadcasting), the retrieval part remains cpu bound. 
 > - **Potentially outdated answers** due to the age of the dataset.
 > - **Limited data**: Several important Code of Law are out of the scope, such as Labour, Social Law and Highway Code. Ordinary Laws, regulations are out of the scope as well.
 > - **Small model**: A cost efficient model is used, which may not always return the most relevant results.
@@ -181,6 +181,7 @@ track key metrics: query volumes, costs, tokens, latency metrics (P50/P95/P99).
 ```
 
 </details>
+
 
 
 
