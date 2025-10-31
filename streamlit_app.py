@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 from analytics.metrics import LexBelAnalytics  # noqa: E402
 from embeddings import CloudEmbedder  # noqa: E402
-from observability import generate_session_id, get_tracer  # noqa: E402
+from observability import get_tracer  # noqa: E402
 from retrievers import HybridRetriever, MMRRetriever  # noqa: E402
 from ui.components import (  # noqa: E402
     get_conversational_input,
@@ -38,6 +38,7 @@ from ui.query_handlers import (  # noqa: E402
     process_conversational_query,
     process_retrieval_query,
 )
+from ui.session import initialize_session_state  # noqa: E402
 from ui.styling import get_custom_css  # noqa: E402
 from utils.helpers import load_json  # noqa: E402
 from utils.logging_config import setup_logger  # noqa: E402
@@ -95,20 +96,10 @@ def load_analytics():
 
 
 def main():
-    """Main  app function"""
-
     st.markdown(get_custom_css(), unsafe_allow_html=True)
     analytics = load_analytics()
 
-    # Initialize session state
-    if "session_id" not in st.session_state:
-        st.session_state.session_id = generate_session_id()
-        logger.info(f"New session started: {st.session_state.session_id}")
-        analytics.log_conversation_start(st.session_state.session_id)
-
-    if "chat_history" not in st.session_state:
-        st.session_state.chat_history = []
-        logger.info("Chat history initialized")
+    initialize_session_state(analytics)
 
     # Initialize Langfuse tracer
     tracer = get_tracer()
