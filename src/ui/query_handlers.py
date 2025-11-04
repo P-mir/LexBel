@@ -56,10 +56,15 @@ def process_conversational_query(question, retriever, top_k, retriever_type, ana
                 message_placeholder.markdown(full_response + "▌")
             if chunk_sources is not None:
                 sources = chunk_sources
+                logger.info(f"Received {len(sources)} sources from stream")
             if chunk_details is not None:
                 retrieval_details = chunk_details
+                logger.info(f"Received retrieval_details: {retrieval_details}")
 
         message_placeholder.markdown(full_response)
+        logger.info(
+            f"After stream: sources={sources is not None}, retrieval_details={retrieval_details is not None}"
+        )
 
     total_time_ms = (time.time() - start_time) * 1000
 
@@ -86,6 +91,51 @@ def process_conversational_query(question, retriever, top_k, retriever_type, ana
         }
     )
 
+    # Log analytics BEFORE generating followup questions (which triggers st.rerun())
+    logger.info(
+        f"Analytics logging check: sources={sources is not None}, retrieval_details={retrieval_details is not None}"
+    )
+    if sources:
+        logger.info(f"Logging analytics for conversational query with {len(sources)} sources")
+        if retrieval_details:
+            logger.info(
+                f"Logging with full details: cost={retrieval_details.get('cost_usd')}, tokens={retrieval_details.get('total_tokens')}"
+            )
+            analytics.log_search(
+                query=question,
+                retriever_type=retriever_type,
+                num_results=len(sources),
+                retrieval_time_ms=total_time_ms,
+                sources=[s.reference for s in sources],
+                cost_usd=retrieval_details.get("cost_usd", 0.0),
+                tokens=retrieval_details.get("total_tokens", 0),
+                conversation_id=st.session_state.session_id,
+                turn_number=len(st.session_state.chat_history) // 2,
+            )
+
+            analytics.log_conversation_turn(
+                conversation_id=st.session_state.session_id,
+                cost_usd=retrieval_details.get("cost_usd", 0.0),
+                tokens=retrieval_details.get("total_tokens", 0),
+            )
+        else:
+            logger.warning("retrieval_details is None, logging basic search info only")
+            analytics.log_search(
+                query=question,
+                retriever_type=retriever_type,
+                num_results=len(sources),
+                retrieval_time_ms=total_time_ms,
+                sources=[s.reference for s in sources],
+                cost_usd=0.0,
+                tokens=0,
+                conversation_id=st.session_state.session_id,
+                turn_number=len(st.session_state.chat_history) // 2,
+            )
+        logger.info(f"✅ Analytics logged successfully for query: {question[:50]}")
+    else:
+        logger.warning(f"No sources retrieved, not logging search for query: {question[:50]}")
+
+    # Generate followup questions AFTER analytics logging
     followup_questions = []
     if full_response and sources:
         try:
@@ -105,22 +155,3 @@ def process_conversational_query(question, retriever, top_k, retriever_type, ana
             st.session_state.latest_followup_questions = []
     else:
         st.session_state.latest_followup_questions = []
-
-    if retrieval_details and sources:
-        analytics.log_search(
-            query=question,
-            retriever_type=retriever_type,
-            num_results=len(sources),
-            retrieval_time_ms=total_time_ms,
-            sources=[s.reference for s in sources],
-            cost_usd=retrieval_details.get("cost_usd", 0.0),
-            tokens=retrieval_details.get("total_tokens", 0),
-            conversation_id=st.session_state.session_id,
-            turn_number=len(st.session_state.chat_history) // 2,
-        )
-
-        analytics.log_conversation_turn(
-            conversation_id=st.session_state.session_id,
-            cost_usd=retrieval_details.get("cost_usd", 0.0),
-            tokens=retrieval_details.get("total_tokens", 0),
-        )

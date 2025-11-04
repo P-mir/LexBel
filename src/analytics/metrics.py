@@ -118,6 +118,9 @@ class LexBelAnalytics:
 
     def get_dashboard_stats(self) -> Dict:
         """Get statistics for dashboard display."""
+        # Reload data from disk to get the latest stats
+        self.data = self._load_metrics()
+
         # Total queries
         total_queries = len(self.data["searches"])
 
