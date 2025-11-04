@@ -132,7 +132,7 @@ def main():
     with st.sidebar:
         render_sidebar_logo()
 
-        st.markdown("### ⚙️ Configuration")
+        st.markdown("###  Configuration")
 
         page = render_page_navigation()
 
@@ -217,7 +217,9 @@ def main():
                 if mode == "Récupération Seule":
                     process_retrieval_query(question, retriever, top_k, retriever_type, analytics)
                 else:  # conversational mode
-                    process_conversational_query(question, retriever, top_k, analytics)
+                    process_conversational_query(
+                        question, retriever, top_k, retriever_type, analytics
+                    )
 
             except Exception as e:
                 st.error(f"❌ Erreur lors du traitement: {e}")

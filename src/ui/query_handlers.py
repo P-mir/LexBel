@@ -25,7 +25,7 @@ def process_retrieval_query(question, retriever, top_k, retriever_type, analytic
     render_retrieval_results(sources, retrieval_time_ms)
 
 
-def process_conversational_query(question, retriever, top_k, analytics):
+def process_conversational_query(question, retriever, top_k, retriever_type, analytics):
     start_time = time.time()
 
     qa_chain = ConversationalQA(retriever=retriever)
@@ -109,7 +109,7 @@ def process_conversational_query(question, retriever, top_k, analytics):
     if retrieval_details and sources:
         analytics.log_search(
             query=question,
-            retriever_type="conversational",
+            retriever_type=retriever_type,
             num_results=len(sources),
             retrieval_time_ms=total_time_ms,
             sources=[s.reference for s in sources],
