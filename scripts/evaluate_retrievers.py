@@ -17,9 +17,11 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 import json
-from embeddings.cloud_embedder import CloudEmbedder
+
 from evaluation.evaluator import RetrieverEvaluator
 from evaluation.results import ComparisonReport
+
+from embeddings.cloud_embedder import CloudEmbedder
 from retrievers.hybrid import HybridRetriever
 from retrievers.mmr import MMRRetriever
 from utils.logging_config import setup_logger
@@ -45,10 +47,10 @@ def main():
 
     # Configuration
     k_values = [5, 10, 20]
-    
+
     # Alpha values for hybrid retriever (0.0 = pure lexical/BM25)
     alpha_values = [0.0, 0.5, 1.0]  # pure lexical, balanced, pure vector
-    
+
     # Lambda values for MMR (balance relevance vs diversity)
     lambda_values = [0.7]  # more relevance
 
@@ -71,7 +73,7 @@ def main():
     # Load vector store and embedder
     logger.info("\nLoading vector store and embedder...")
     embedder = CloudEmbedder(model_name="mistral-embed")
-    
+
     # Load vector store
     vector_store = FAISSVectorStore(embedding_dim=1024)
     vector_store.load(vector_store_path)
@@ -80,7 +82,7 @@ def main():
     logger.info("Loading chunks...")
     with open(chunks_metadata_path, "r", encoding="utf-8") as f:
         chunks_data = json.load(f)
-    
+
     chunks = [
         TextChunk(
             chunk_id=chunk["chunk_id"],
@@ -109,7 +111,7 @@ def main():
 
     for alpha in alpha_values:
         logger.info(f"\n--- Hybrid Retriever (alpha={alpha}) ---")
-        
+
         retriever = HybridRetriever(
             vector_store=vector_store,
             embedder=embedder,
@@ -117,7 +119,7 @@ def main():
             alpha=alpha,
         )
 
-        retriever_name = f"Hybrid_alpha{alpha}"
+        retriever_name = f"Hybrid_alpha{alpha} ({alpha}=0 -> lexical only, {alpha}=1 -> vector only)"
         if alpha == 0.0:
             retriever_name = "BM25_Lexical"
         elif alpha == 1.0:
@@ -142,7 +144,7 @@ def main():
 
     for lambda_param in lambda_values:
         logger.info(f"\n--- MMR Retriever (lambda={lambda_param}) ---")
-        
+
         retriever = MMRRetriever(
             vector_store=vector_store,
             embedder=embedder,

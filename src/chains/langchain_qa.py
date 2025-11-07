@@ -108,7 +108,7 @@ class LangChainQA:
     def query(
         self,
         question: str,
-        top_k: int = 5,
+        top_k: int = 10,
         trace_id: Optional[str] = None,
         session_id: Optional[str] = None,
     ) -> QueryResponse:

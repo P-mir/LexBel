@@ -81,7 +81,7 @@ def load_system(vector_store_dir: str, retriever_type: str):
             vector_store=vector_store,
             embedder=embedder,
             chunks=chunks,
-            alpha=st.session_state.get("hybrid_alpha", 0.7),
+            alpha=st.session_state.get("hybrid_alpha", 1.0),
         )
 
     return retriever, embedder, vector_store, chunks, config

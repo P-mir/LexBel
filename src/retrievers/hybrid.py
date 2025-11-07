@@ -28,7 +28,7 @@ class HybridRetriever:
         vector_store: Any,
         embedder: Any,
         chunks: List[TextChunk],
-        alpha: float = 0.5,
+        alpha: float = 1, # test shows that pure vector search returns lead to better mrr and map metrics
         max_features: int = 10000,
     ):
         """Initialize hybrid retriever.

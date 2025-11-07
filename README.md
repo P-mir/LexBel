@@ -7,7 +7,7 @@
 
 ## What is LexBel?
 
-LexBel allows citizens to ask juridic questions answered by an LLM anchored to a database of Belgian Code of Law in order to reduce hallucinations.
+LexBel allows citizens to ask juridic questions answered by a multimodal interface agent anchored to a database of Belgian Code of Law in order to reduce hallucinations.
 
 ### Demo
 
@@ -27,6 +27,8 @@ the corpus supporting the RAG system comprises 22,633 articles from 32 Belgian c
 
 > - **Potentially outdated answers** due to the age of the dataset.
 > - **Limited data**: Several important Code of Law are out of the scope, such as Labour, Social Law and Highway Code. Ordinary Laws, regulations are out of the scope as well.
+Or as Louis, A., & Spanakis, G mention in their paper: *[...]the answer contained in the
+remaining relevant articles might be incomplete, although it is still appropriate.*
 > - **Small model**: A cost efficient model is used, which may not always return the most relevant results.
 
 ##  Quick Start
@@ -74,6 +76,7 @@ Visit `http://localhost:8501`
 - `Mistral AI` for answer generation (mistral-small-latest)
 - `Langfuse` — observability and tracing
 
+
 **Application Layer**
  `Streamlit`, `Pandas`, `Plotly`
 
@@ -91,29 +94,17 @@ Visit `http://localhost:8501`
 - Bandit for vulnerability scanning
 
 
-##  Usage Example
 
-### Basic Question Answering
+### Retrieval Evaluation Results
 
-```python
-from src.chains.langchain_qa import LangChainQA
-from src.embeddings.cloud_embedder import CloudEmbedder
-from src.vector_store.faiss_store import FAISSVectorStore
+Evaluation performed on 100 test queries from the legal QA dataset:
 
-embedder = CloudEmbedder()
-vector_store = FAISSVectorStore.load("data/vector_store")
-qa_chain = LangChainQA(vector_store, embedder)
-
-result = qa_chain.query(
-    "Quelle est la durée de validité d'un certificat PEB ?",
-    top_k=5
-)
-
-print(result["answer"])
-print(f"Sources: {result['sources']}")
-```
-
-
+| Retriever | Config | MAP | MRR | P@5 | P@10 | P@20 | R@5 | R@10 | R@20 |
+|-----------|--------|-----|-----|-----|------|------|-----|------|------|
+| TF_IDF_Lexical | alpha=0.0 | 0.0665 | 0.1194 | 0.0606 | 0.0404 | 0.0323 | 0.1163 | 0.1283 | 0.2345 |
+| Hybrid_alpha0.5 | alpha=0.5 | 0.1174 | 0.2013 | 0.0780 | 0.0730 | 0.0525 | 0.1621 | 0.3106 | 0.4200 |
+| VectorOnly | alpha=1.0 | **0.2314** | **0.3356** | **0.1120** | **0.0800** | **0.0530** | **0.2672** | **0.3547** | **0.4401** |
+| MMR_lambda0.7 | lambda=0.7 | 0.1977 | 0.3046 | 0.0889 | 0.0556 | 0.0414 | 0.2268 | 0.2683 | 0.3529 |
 
 ## Performance Metrics
 
@@ -177,3 +168,4 @@ track key metrics: query volumes, costs, tokens, latency metrics (P50/P95/P99).
 ```
 
 </details>
+

@@ -99,10 +99,10 @@ def render_header():
 def render_suggested_questions():
     with st.expander("📝 Questions Suggérées", expanded=False):
         st.markdown("""
+        - Je suis marié(e). Le propriétaire a envoyé son préavis à un seul conjoint, est-ce valable ?
         - Quels sont les objectifs climatiques de la Région bruxelloise ?
+        - Je suis majeur. Je suis né en Belgique. Puis-je introduire un recours en cas d'avis négatif concernant ma demande de nationalité ?
         - Quelles informations doit mentionner le notaire lors d'une vente immobilière ?
-        - Quelles matières sont visées par l'article 39 de la Constitution ?
-        - Quels services existent pour les personnes handicapées en Wallonie ?
         """)
 
 
@@ -238,7 +238,7 @@ def get_retrieval_input():
 def render_retriever_settings(mode, analytics, session_state):
     retriever_type = st.selectbox(
         "Type de Récupérateur",
-        options=["mmr", "hybrid"],
+        options=["hybrid","mmr"],
         index=0,
         help="MMR: Diversité maximale | Hybrid: Sémantique + Lexical",
     ).lower()
@@ -247,7 +247,7 @@ def render_retriever_settings(mode, analytics, session_state):
         "Nombre de Sources",
         min_value=1,
         max_value=20,
-        value=5,
+        value=10,
         help="Nombre d'articles juridiques à récupérer",
     )
 
