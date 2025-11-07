@@ -1,10 +1,37 @@
+import io
 import os
 from abc import ABC, abstractmethod
 from typing import Optional
 
+from openai import OpenAI
+
 from utils.logging_config import setup_logger
 
 logger = setup_logger(__name__)
+
+
+class AudioTranscriber:
+
+    def __init__(self, api_key: Optional[str] = None, model: str = "gpt-4o-transcribe"):
+
+        self.api_key = api_key or os.getenv("OPEN_AI_API_KEY")
+        self.client = OpenAI(api_key=self.api_key)
+        self.model = model
+        logger.info(f"AudioTranscriber initialized with model: {model}")
+
+    def transcribe(self, audio_bytes: bytes, language: str = "fr") -> str:
+        """Transcribe audio bytes to text."""
+
+        audio_file = io.BytesIO(audio_bytes)
+        audio_file.name = "audio.wav"  # OpenAI expects a filename
+
+        response = self.client.audio.transcriptions.create(
+            model=self.model, file=audio_file, language=language
+        )
+
+        transcribed_text = response.text
+        logger.info(f"Successfully transcribed audio: {len(transcribed_text)} characters")
+        return transcribed_text
 
 
 class BaseLLM(ABC):

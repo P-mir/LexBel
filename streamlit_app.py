@@ -31,12 +31,12 @@ from ui.components import (  # noqa: E402
     render_sidebar_logo,
     render_suggested_questions,
     render_system_stats,
+    render_voice_input_inline,
+    render_followup_questions
 )
+
 from ui.dashboard import render_dashboard  # noqa: E402
-from ui.query_handlers import (  # noqa: E402
-    process_conversational_query,
-    process_retrieval_query,
-)
+from ui.query_handlers import process_conversational_query, process_retrieval_query  # noqa: E402
 from ui.session import initialize_session_state  # noqa: E402
 from ui.styling import get_custom_css  # noqa: E402
 from utils.helpers import load_json  # noqa: E402
@@ -158,12 +158,14 @@ def main():
 
     if mode == "Assistant Conversationnel":
         render_chat_history(st.session_state.chat_history)
-        question = get_conversational_input()
 
         # render followup questions if available (after chat input)
-        from ui.components import render_followup_questions
-
         render_followup_questions()
+
+        # Voice input just above chat input
+        render_voice_input_inline()
+
+        question = get_conversational_input()
 
         search_button = False  # not used for chat bot
     else:

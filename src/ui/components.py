@@ -1,4 +1,74 @@
+import logging
+
 import streamlit as st
+from audio_recorder_streamlit import audio_recorder
+
+from llm.adapters import AudioTranscriber
+
+logger = logging.getLogger(__name__)
+
+
+def render_voice_input_inline():
+    """Render inline voice input button just above chat input &Returns transcribed text if audio was recorded and transcribed"""
+    # Center voice button
+    col1, col2, col3 = st.columns([0.4, 0.2, 0.4])
+
+    with col2:
+        # Custom CSS for larger mic button with hover effect
+        st.markdown("""
+            <style>
+            .stButton > button {
+                font-size: 2.5rem;
+            }
+            .stButton > button:hover {
+                background-color: rgba(0,0,0,0.08);
+                border-radius: 50%;
+            }
+            </style>
+        """, unsafe_allow_html=True)
+
+
+        if st.button(":material/mic:", key="voice_btn", help="Cliquez pour utiliser la commande vocale", use_container_width=True):
+            st.session_state.show_voice_recorder = True
+
+    # Show audio recorder when button is clicked
+    if st.session_state.get("show_voice_recorder", False):
+        st.markdown(" **Enregistrement en cours... Cliquez sur le micro pour arrêter**")
+        audio_bytes = audio_recorder(
+            text="",
+            recording_color="#e74c3c",
+            neutral_color="#3498db",
+            icon_name="microphone",
+            icon_size="2x",
+            key="audio_recorder_main",
+            auto_start=True
+        )
+
+        if audio_bytes:
+            st.session_state.show_voice_recorder = False
+
+            with st.spinner("Transcription en cours..."):
+                try:
+                    transcriber = AudioTranscriber()
+                    transcribed_text = transcriber.transcribe(audio_bytes, language="fr")
+
+                    st.success(f"✅ Transcription réussie: {transcribed_text[:50]}...")
+
+                    # Store in session state
+                    st.session_state.transcribed_question = transcribed_text
+                    st.rerun()
+
+                except Exception as e:
+                    st.error(f"❌ Erreur de transcription: {e}")
+                    logger.error(f"Transcription error: {e}", exc_info=True)
+                    st.session_state.show_voice_recorder = False
+
+        # Cancel button
+        if st.button("❌ Annuler", key="cancel_voice"):
+            st.session_state.show_voice_recorder = False
+            st.rerun()
+
+    return None
 
 
 def render_sidebar_logo():
@@ -90,16 +160,20 @@ def render_chat_history(chat_history):
 
 
 def get_conversational_input():
-    import logging
-
-    logger = logging.getLogger(__name__)
-
+    """Get input from chat, handling followup questions and transcribed audio."""
     # check for followup question first (set by button click in previous render)
     if "selected_followup" in st.session_state:
         question = st.session_state.selected_followup
         logger.info(f"🔵 Found selected_followup: {question}")
         del st.session_state.selected_followup
         st.session_state.latest_followup_questions = []
+        return question
+
+    # Check for transcribed audio input
+    if "transcribed_question" in st.session_state:
+        question = st.session_state.transcribed_question
+        logger.info(f"Found transcribed_question: {question}")
+        del st.session_state.transcribed_question
         return question
 
     question = st.chat_input("Posez votre question sur le droit belge...")
@@ -109,10 +183,7 @@ def get_conversational_input():
 
 
 def render_followup_questions():
-    import logging
-
-    logger = logging.getLogger(__name__)
-
+    """Render followup question buttons."""
     logger.info(
         f"🔵 render_followup_questions called. Session state has: {st.session_state.get('latest_followup_questions', 'NONE')}"
     )
