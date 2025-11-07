@@ -23,6 +23,7 @@ from ui.components import (  # noqa: E402
     get_retrieval_input,
     render_advanced_params,
     render_chat_history,
+    render_followup_questions,
     render_header,
     render_mode_selector,
     render_page_footer,
@@ -32,9 +33,7 @@ from ui.components import (  # noqa: E402
     render_suggested_questions,
     render_system_stats,
     render_voice_input_inline,
-    render_followup_questions
 )
-
 from ui.dashboard import render_dashboard  # noqa: E402
 from ui.query_handlers import process_conversational_query, process_retrieval_query  # noqa: E402
 from ui.session import initialize_session_state  # noqa: E402
