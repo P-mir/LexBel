@@ -1,5 +1,3 @@
-"""Maximal Marginal Relevance (MMR) retrieval implementation."""
-
 import time
 from typing import Any, List
 
@@ -21,12 +19,10 @@ def mmr_select(
 ) -> List[RetrievalResult]:
     """Select documents using Maximal Marginal Relevance.
 
-    MMR balances relevance to the query with diversity among selected documents.
-
     Algorithm:
     1. Start with empty selected set
     2. Iteratively select document that maximizes:
-       MMR = λ * sim(query, doc) - (1-λ) * max(sim(doc, selected))
+       MMR = lambda * sim(query, doc) - (1-lambda) * max(sim(doc, selected))
     3. Continue until k documents selected
 
     Args:
@@ -80,8 +76,6 @@ def mmr_select(
 
 
 class MMRRetriever:
-    """Retriever that uses MMR for diverse results."""
-
     def __init__(
         self,
         vector_store: Any,
@@ -89,14 +83,6 @@ class MMRRetriever:
         lambda_param: float = 0.5,
         initial_k: int = 50,
     ):
-        """Initialize MMR retriever.
-
-        Args:
-            vector_store: Vector store for initial retrieval
-            embedder: Embedder for query encoding
-            lambda_param: MMR lambda parameter
-            initial_k: Number of candidates to retrieve before MMR
-        """
         self.vector_store = vector_store
         self.embedder = embedder
         self.lambda_param = lambda_param
@@ -105,15 +91,6 @@ class MMRRetriever:
         logger.info(f"MMR retriever initialized with λ={lambda_param}, initial_k={initial_k}")
 
     def retrieve(self, query: str, top_k: int = 10) -> List[RetrievalResult]:
-        """Retrieve documents using MMR.
-
-        Args:
-            query: Query string
-            top_k: Number of final results to return
-
-        Returns:
-            List of diverse retrieval results
-        """
         start_time = time.time()
 
         query_embedding = self.embedder.embed_text(query)

@@ -11,10 +11,8 @@ logger = setup_logger(__name__)
 
 
 class AudioTranscriber:
-
     def __init__(self, api_key: Optional[str] = None, model: str = "gpt-4o-transcribe"):
-
-        self.api_key = api_key or os.getenv("OPEN_AI_API_KEY")
+        self.api_key = api_key or os.getenv("OPENAI_API_KEY")
         self.client = OpenAI(api_key=self.api_key)
         self.model = model
         logger.info(f"AudioTranscriber initialized with model: {model}")

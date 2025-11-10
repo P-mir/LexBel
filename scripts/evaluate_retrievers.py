@@ -1,19 +1,8 @@
 #!/usr/bin/env python3
-"""Evaluate and compare different retriever configurations.
-
-This script evaluates MMR and BM25 (lexical) retrievers with different
-configurations on the test question dataset.
-
-Usage:
-    python scripts/evaluate_retrievers.py
-
-Results are saved to data/test/eval_results/
-"""
 
 import sys
 from pathlib import Path
 
-# Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 import json
@@ -37,48 +26,37 @@ def main():
     logger.info("Starting Retriever Evaluation")
     logger.info("=" * 80)
 
-    # Paths
     data_dir = Path("data")
     test_questions_path = data_dir / "test" / "questions_test.csv"
     chunks_metadata_path = data_dir / "vector_store" / "chunks_metadata.json"
     vector_store_path = data_dir / "vector_store"
-    results_dir = data_dir / "test" / "eval_results"
+    results_dir = Path("evals") / "components" / "retrieval"
     results_dir.mkdir(parents=True, exist_ok=True)
 
-    # Configuration
     k_values = [5, 10, 20]
 
-    # Alpha values for hybrid retriever (0.0 = pure lexical/BM25)
+    # hybrid retriever
     alpha_values = [0.0, 0.5, 1.0]  # pure lexical, balanced, pure vector
 
-    # Lambda values for MMR (balance relevance vs diversity)
-    lambda_values = [0.7]  # more relevance
+    # mmr retriever
+    lambda_values = [0.7]
 
     logger.info(f"K values: {k_values}")
     logger.info(f"Alpha values for Hybrid: {alpha_values}")
     logger.info(f"Lambda values for MMR: {lambda_values}")
 
-    # Load test data
     logger.info("\nLoading test data...")
     test_df = RetrieverEvaluator.load_test_questions(test_questions_path)
-    chunk_to_article = RetrieverEvaluator.load_chunk_to_article_mapping(
-        chunks_metadata_path
-    )
+    chunk_to_article = RetrieverEvaluator.load_chunk_to_article_mapping(chunks_metadata_path)
 
-    # Initialize evaluator
-    evaluator = RetrieverEvaluator(
-        chunk_to_article_mapping=chunk_to_article, k_values=k_values
-    )
+    evaluator = RetrieverEvaluator(chunk_to_article_mapping=chunk_to_article, k_values=k_values)
 
-    # Load vector store and embedder
     logger.info("\nLoading vector store and embedder...")
     embedder = CloudEmbedder(model_name="mistral-embed")
 
-    # Load vector store
     vector_store = FAISSVectorStore(embedding_dim=1024)
     vector_store.load(vector_store_path)
 
-    # Load chunks for hybrid retriever
     logger.info("Loading chunks...")
     with open(chunks_metadata_path, "r", encoding="utf-8") as f:
         chunks_data = json.load(f)
@@ -101,12 +79,10 @@ def main():
     ]
     logger.info(f"Loaded {len(chunks)} chunks")
 
-    # Run evaluations
     all_results = []
 
-    # 1. Evaluate Hybrid retrievers with different alpha values
     logger.info("\n" + "=" * 80)
-    logger.info("Evaluating Hybrid Retrievers (BM25 when alpha=0.0)")
+    logger.info("Evaluating Hybrid Retrievers")
     logger.info("=" * 80)
 
     for alpha in alpha_values:
@@ -119,9 +95,11 @@ def main():
             alpha=alpha,
         )
 
-        retriever_name = f"Hybrid_alpha{alpha} ({alpha}=0 -> lexical only, {alpha}=1 -> vector only)"
+        retriever_name = (
+            f"Hybrid_alpha{alpha} ({alpha}=0 -> lexical only, {alpha}=1 -> vector only)"
+        )
         if alpha == 0.0:
-            retriever_name = "BM25_Lexical"
+            retriever_name = "TF_IDF_Lexical"
         elif alpha == 1.0:
             retriever_name = "VectorOnly"
 
@@ -137,9 +115,8 @@ def main():
         result.save(results_dir / f"{retriever_name.lower()}_results.json")
         all_results.append(result)
 
-    # 2. Evaluate MMR retrievers with different lambda values
     logger.info("\n" + "=" * 80)
-    logger.info("Evaluating MMR Retrievers")
+    logger.info("Evaluating MMR Retriever(s)")
     logger.info("=" * 80)
 
     for lambda_param in lambda_values:

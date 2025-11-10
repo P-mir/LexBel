@@ -1,5 +1,3 @@
-"""Hybrid retriever combining vector and lexical search."""
-
 import time
 from typing import Any, Dict, List
 
@@ -14,11 +12,7 @@ logger = setup_logger(__name__)
 
 
 class HybridRetriever:
-    """Hybrid retriever combining vector and lexical (TF-IDF) search.
-
-    Combines:
-    - Vector search: Semantic similarity via embeddings
-    - Lexical search: Term matching via TF-IDF
+    """Hybrid retriever combining term term matching TF-IDF and vector search.
 
     Scores are combined using a weighted average, configurable via alpha parameter.
     """
@@ -28,17 +22,16 @@ class HybridRetriever:
         vector_store: Any,
         embedder: Any,
         chunks: List[TextChunk],
-        alpha: float = 1, # test shows that pure vector search returns lead to better mrr and map metrics
+        alpha: float = 1,  # test on sample queries actually shows that pure vector search returns lead to better mrr and map metrics -> users tend to express themselves in non technical language which may make lexical matching less effective ?
         max_features: int = 10000,
     ):
-        """Initialize hybrid retriever.
+        """
 
         Args:
             vector_store: Vector store for semantic search
             embedder: Embedder for query encoding
             chunks: All text chunks for building TF-IDF index
-            alpha: Weight for vector search (1-alpha for lexical)
-                   0.0 = pure lexical, 1.0 = pure vector
+            alpha: Weight for vector search vs tf-idf
             max_features: Maximum features for TF-IDF
         """
         self.vector_store = vector_store
@@ -69,7 +62,6 @@ class HybridRetriever:
         Returns:
             Dictionary mapping chunk_id to TF-IDF score
         """
-        # Transform query
         query_vector = self.vectorizer.transform([query])
 
         # Compute similarities
@@ -89,36 +81,16 @@ class HybridRetriever:
         return results
 
     def _vector_search(self, query: str, top_k: int) -> Dict[str, float]:
-        """Perform vector search.
-
-        Args:
-            query: Query string
-            top_k: Number of results
-
-        Returns:
-            Dictionary mapping chunk_id to vector similarity score
-        """
-        # Embed query
+        """Perform vector search & return dictionary mapping chunk_id to vector similarity score"""
         query_embedding = self.embedder.embed_text(query)
 
-        # Search
         results_list = self.vector_store.search(query_embedding, top_k=top_k)
 
-        # Map to dictionary
         results = {r.chunk_id: r.score for r in results_list}
 
         return results
 
     def retrieve(self, query: str, top_k: int = 10) -> List[RetrievalResult]:
-        """Retrieve documents using hybrid search.
-
-        Args:
-            query: Query string
-            top_k: Number of results to return
-
-        Returns:
-            List of retrieval results with combined scores
-        """
         start_time = time.time()
 
         # Get results from both methods (retrieve more candidates)
