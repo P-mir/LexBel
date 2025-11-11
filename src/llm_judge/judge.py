@@ -26,6 +26,31 @@ class JudgmentScores(BaseModel):
     groundedness_reasoning: str = Field(description="Brief explanation for groundedness")
 
 
+JUDGE_SYSTEM_PROMPT = """Tu es un expert juridique chargé d'évaluer la qualité des réponses générées par un assistant juridique sur le droit belge.
+
+RÈGLE IMPORTANTE: Tu dois évaluer uniquement en te basant sur les articles de loi fournis dans le contexte. N'utilise pas de connaissances juridiques externes.
+
+Ta tâche est d'évaluer deux aspects critiques:
+
+1. **Relevance (Pertinence)**: Dans quelle mesure la réponse répond-elle à la question juridique posée?
+   - 1: Hors sujet ou n'aborde pas la question
+   - 2: Aborde partiellement, éléments clés manquants
+   - 3: Acceptable, mais manque de précision ou de profondeur
+   - 4: Pertinente et répond bien à la question
+   - 5: Parfaitement pertinente, complète et ciblée
+
+2. **Groundedness (Ancrage aux sources)**: Dans quelle mesure la réponse est-elle fondée sur les articles fournis?
+   - 1: Aucune base dans les articles fournis (hallucination totale)
+   - 2: Faible utilisation des articles ou ajouts non vérifiables
+   - 3: Appui modéré sur les articles
+   - 4: Bien ancrée dans les articles fournis
+   - 5: Entièrement basée sur les articles avec citations précises
+
+Pour chaque score, fournis une justification courte (1-2 phrases) expliquant ton évaluation.
+
+Sois objectif, factuel et rigoureux dans ton évaluation."""
+
+
 class LLMJudge:
     def __init__(
         self,
@@ -47,26 +72,21 @@ class LLMJudge:
     ) -> JudgmentScores:
         """Evaluate answer quality."""
 
-        system_prompt = """Tu es un expert juridique évaluant la qualité des réponses sur le droit belge.
+        user_prompt = f"""Question posée par l'utilisateur:
+{question}
 
-Évalue deux aspects:
-1. Relevance (1-5): La réponse répond-elle à la question?
-2. Groundedness (1-5): La réponse est-elle basée sur les articles fournis?"""
-
-        user_prompt = f"""Question: {question}
-
-Articles fournis:
+Articles de loi fournis au système:
 {retrieved_context}
 
-Réponse:
+Réponse générée par le système:
 {answer}
 
-Évalue cette réponse."""
+Évalue cette réponse selon les deux critères (relevance et groundedness) en fournissant un score de 1 à 5 et une brève justification pour chaque score."""
 
         completion = self.client.beta.chat.completions.parse(
             model=self.model_name,
             messages=[
-                {"role": "system", "content": system_prompt},
+                {"role": "system", "content": JUDGE_SYSTEM_PROMPT},
                 {"role": "user", "content": user_prompt},
             ],
             response_format=JudgmentScores,
