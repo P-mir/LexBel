@@ -83,14 +83,51 @@ Réponse générée par le système:
 
 Évalue cette réponse selon les deux critères (relevance et groundedness) en fournissant un score de 1 à 5 et une brève justification pour chaque score."""
 
-        completion = self.client.beta.chat.completions.parse(
-            model=self.model_name,
-            messages=[
-                {"role": "system", "content": JUDGE_SYSTEM_PROMPT},
-                {"role": "user", "content": user_prompt},
-            ],
-            response_format=JudgmentScores,
-            temperature=self.temperature,
-        )
+        try:
+            completion = self.client.beta.chat.completions.parse(
+                model=self.model_name,
+                messages=[
+                    {"role": "system", "content": JUDGE_SYSTEM_PROMPT},
+                    {"role": "user", "content": user_prompt},
+                ],
+                response_format=JudgmentScores,
+                temperature=self.temperature,
+            )
 
-        return completion.choices[0].message.parsed
+            judgment = completion.choices[0].message.parsed
+            logger.debug(
+                f"Judgment: Relevance={judgment.relevance}, Groundedness={judgment.groundedness}"
+            )
+            return judgment
+
+        except Exception as e:
+            logger.error(f"LLM judge evaluation failed: {e}")
+            raise
+
+    def batch_judge(
+        self,
+        evaluations: list[dict[str, str]],
+    ) -> list[JudgmentScores]:
+        """Evaluate multiple answers in batch."""
+        results = []
+        for i, eval_item in enumerate(evaluations, 1):
+            logger.info(f"Judging answer {i}/{len(evaluations)}")
+            try:
+                judgment = self.judge_answer(
+                    question=eval_item["question"],
+                    answer=eval_item["answer"],
+                    retrieved_context=eval_item["retrieved_context"],
+                )
+                results.append(judgment)
+            except Exception as e:
+                logger.error(f"Failed to judge answer {i}: {e}")
+                results.append(
+                    JudgmentScores(
+                        relevance=0,
+                        groundedness=0,
+                        relevance_reasoning=f"Evaluation failed: {str(e)}",
+                        groundedness_reasoning=f"Evaluation failed: {str(e)}",
+                    )
+                )
+
+        return results
