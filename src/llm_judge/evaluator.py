@@ -3,7 +3,10 @@
 import time
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any
+from typing import Any, Optional
+
+import pandas as pd
+from tqdm import tqdm
 
 from llm_judge.judge import JudgmentScores, LLMJudge
 from utils.logging_config import setup_logger
@@ -98,3 +101,40 @@ class AnswerEvaluator:
             response_time=response_time,
             timestamp=datetime.now().isoformat(),
         )
+
+    def evaluate_dataset(
+        self,
+        questions_df: pd.DataFrame,
+        top_k: int = 10,
+        limit: Optional[int] = None,
+    ) -> list[AnswerEvaluation]:
+        """Evaluate multiple questions from dataset."""
+
+        if limit:
+            questions_df = questions_df.head(limit)
+            logger.info(f"Limiting evaluation to {limit} questions")
+
+        evaluations: list[AnswerEvaluation] = []
+
+        logger.info(f"Starting evaluation on {len(questions_df)} questions")
+
+        for idx, row in tqdm(questions_df.iterrows(), total=len(questions_df)):
+            question_id = str(row.get("id", idx))
+            question = row["question"]
+
+            try:
+                eval_result = self.evaluate_question(
+                    question_id=question_id,
+                    question=question,
+                    top_k=top_k,
+                )
+                evaluations.append(eval_result)
+                logger.info(
+                    f"Q{question_id}: Rel={eval_result.relevance_score}, "
+                    f"Ground={eval_result.groundedness_score}"
+                )
+            except Exception as e:
+                logger.error(f"Failed to evaluate question {question_id}: {e}")
+                continue
+
+        return evaluations
