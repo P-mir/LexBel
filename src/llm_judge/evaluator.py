@@ -1,8 +1,10 @@
 """Evaluator for running answer quality evaluation on test datasets."""
 
+import json
 import time
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from datetime import datetime
+from pathlib import Path
 from typing import Any, Optional
 
 import pandas as pd
@@ -107,7 +109,7 @@ class AnswerEvaluator:
         questions_df: pd.DataFrame,
         top_k: int = 10,
         limit: Optional[int] = None,
-    ) -> list[AnswerEvaluation]:
+    ) -> EvaluationReport:
         """Evaluate multiple questions from dataset."""
 
         if limit:
@@ -137,4 +139,56 @@ class AnswerEvaluator:
                 logger.error(f"Failed to evaluate question {question_id}: {e}")
                 continue
 
-        return evaluations
+        return self._create_report(evaluations)
+
+    def _create_report(self, evaluations: list[AnswerEvaluation]) -> EvaluationReport:
+        """Create evaluation report with aggregated metrics."""
+        if not evaluations:
+            raise ValueError("No evaluations to report")
+
+        relevance_scores = [e.relevance_score for e in evaluations]
+        groundedness_scores = [e.groundedness_score for e in evaluations]
+        response_times = [e.response_time for e in evaluations]
+
+        relevance_dist = {i: relevance_scores.count(i) for i in range(1, 6)}
+        groundedness_dist = {i: groundedness_scores.count(i) for i in range(1, 6)}
+
+        report = EvaluationReport(
+            config_name=self.config_name,
+            timestamp=datetime.now().isoformat(),
+            total_questions=len(evaluations),
+            avg_relevance=sum(relevance_scores) / len(relevance_scores),
+            avg_groundedness=sum(groundedness_scores) / len(groundedness_scores),
+            avg_response_time=sum(response_times) / len(response_times),
+            relevance_distribution=relevance_dist,
+            groundedness_distribution=groundedness_dist,
+            evaluations=[asdict(e) for e in evaluations],
+            metadata={
+                "qa_chain": type(self.qa_chain).__name__,
+                "judge_model": self.judge.model_name,
+            },
+        )
+
+        logger.info(
+            f"Evaluation complete: Avg Relevance={report.avg_relevance:.2f}, "
+            f"Avg Groundedness={report.avg_groundedness:.2f}"
+        )
+
+        return report
+
+    def save_report(self, report: EvaluationReport, output_path: Path) -> None:
+        """Save evaluation report to JSON file."""
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+
+        with open(output_path, "w", encoding="utf-8") as f:
+            json.dump(asdict(report), f, indent=2, ensure_ascii=False)
+
+        logger.info(f"Evaluation report saved to {output_path}")
+
+    @staticmethod
+    def load_report(report_path: Path) -> EvaluationReport:
+        """Load evaluation report from JSON file."""
+        with open(report_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+
+        return EvaluationReport(**data)
