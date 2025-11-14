@@ -1,3 +1,5 @@
+import pandas as pd
+
 from llm_judge.evaluator import EvaluationReport
 from utils.logging_config import setup_logger
 
@@ -29,4 +31,43 @@ def print_report_summary(report: EvaluationReport) -> None:
     print(f"Average Relevance: {report.avg_relevance:.2f}/5.0")
     print(f"Average Groundedness: {report.avg_groundedness:.2f}/5.0")
     print(f"Average Response Time: {report.avg_response_time:.2f}s")
+    print("\nRelevance Distribution:")
+    for score in range(1, 6):
+        count = report.relevance_distribution.get(score, 0)
+        pct = (count / report.total_questions) * 100
+        print(f"  Score {score}: {count:3d} ({pct:5.1f}%)")
+    print("\nGroundedness Distribution:")
+    for score in range(1, 6):
+        count = report.groundedness_distribution.get(score, 0)
+        pct = (count / report.total_questions) * 100
+        print(f"  Score {score}: {count:3d} ({pct:5.1f}%)")
     print("=" * 80 + "\n")
+
+
+def find_weak_answers(
+    report: EvaluationReport,
+    threshold: int = 3,
+    limit: int = 20,
+) -> pd.DataFrame:
+    """Find answers with low scores for analysis."""
+    weak_answers = []
+
+    for eval_data in report.evaluations:
+        if eval_data["relevance_score"] < threshold or eval_data["groundedness_score"] < threshold:
+            weak_answers.append(
+                {
+                    "Question ID": eval_data["question_id"],
+                    "Question": eval_data["question"][:100] + "...",
+                    "Relevance": eval_data["relevance_score"],
+                    "Groundedness": eval_data["groundedness_score"],
+                    "Rel Reasoning": eval_data["relevance_reasoning"][:80] + "...",
+                    "Ground Reasoning": eval_data["groundedness_reasoning"][:80] + "...",
+                }
+            )
+
+    df = pd.DataFrame(weak_answers)
+
+    if not df.empty:
+        df = df.sort_values(["Relevance", "Groundedness"]).head(limit)
+
+    return df
