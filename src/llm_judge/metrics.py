@@ -7,7 +7,7 @@ logger = setup_logger(__name__)
 
 
 def aggregate_results(report: EvaluationReport) -> dict:
-    """Get summary eval statistics."""
+    """summary eval statistics"""
     return {
         "config_name": report.config_name,
         "timestamp": report.timestamp,
@@ -23,7 +23,6 @@ def aggregate_results(report: EvaluationReport) -> dict:
 
 
 def print_report_summary(report: EvaluationReport) -> None:
-    """Print evaluation report summary."""
     print("\n" + "=" * 80)
     print(f"EVALUATION REPORT: {report.config_name}")
     print("=" * 80)
@@ -49,7 +48,16 @@ def find_weak_answers(
     threshold: int = 3,
     limit: int = 20,
 ) -> pd.DataFrame:
-    """Find answers with low scores for analysis."""
+    """Find answers with low scores for further analysis.
+
+    Args:
+        report: EvaluationReport to analyze
+        threshold: Score threshold (answers below this are considered weak)
+        limit: Maximum number of weak answers to return
+
+    Returns:
+        DataFrame with weak answers
+    """
     weak_answers = []
 
     for eval_data in report.evaluations:

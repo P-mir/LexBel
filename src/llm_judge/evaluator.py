@@ -57,6 +57,13 @@ class AnswerEvaluator:
         judge: LLMJudge,
         config_name: str = "default",
     ):
+        """Initialize Answer Evaluator.
+
+        Args:
+            qa_chain: QA chain instance (e.g., ConversationalQA)
+            judge: LLMJudge instance for evaluation
+            config_name: Configuration identifier for comparison
+        """
         self.qa_chain = qa_chain
         self.judge = judge
         self.config_name = config_name
@@ -68,13 +75,13 @@ class AnswerEvaluator:
         question: str,
         top_k: int = 5,
     ) -> AnswerEvaluation:
-        """Evaluate a single question."""
+        """Evaluate a single question"""
 
         start_time = time.time()
         response = self.qa_chain.query(
             question=question,
             top_k=top_k,
-            enable_reformulation=False,
+            enable_reformulation=False,  # No reformulation for test questions
         )
         response_time = time.time() - start_time
 
@@ -110,8 +117,6 @@ class AnswerEvaluator:
         top_k: int = 10,
         limit: Optional[int] = None,
     ) -> EvaluationReport:
-        """Evaluate multiple questions from dataset."""
-
         if limit:
             questions_df = questions_df.head(limit)
             logger.info(f"Limiting evaluation to {limit} questions")
@@ -150,6 +155,7 @@ class AnswerEvaluator:
         groundedness_scores = [e.groundedness_score for e in evaluations]
         response_times = [e.response_time for e in evaluations]
 
+        # Distribution of scores
         relevance_dist = {i: relevance_scores.count(i) for i in range(1, 6)}
         groundedness_dist = {i: groundedness_scores.count(i) for i in range(1, 6)}
 
