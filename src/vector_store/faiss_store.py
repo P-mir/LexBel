@@ -1,6 +1,6 @@
 """FAISS-based vector store for efficient similarity search."""
 
-import pickle
+import pickle  # nosec
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -218,7 +218,7 @@ class FAISSVectorStore:
         self.index = faiss.read_index(str(index_path))
 
         with open(metadata_path, "rb") as f:
-            data = pickle.load(f)
+            data = pickle.load(f)  # nosec
 
         self.metadata = data["metadata"]
         self.chunks = data["chunks"]

@@ -15,7 +15,8 @@ def render_voice_input_inline():
 
     with col2:
         # Custom CSS for larger mic button with hover effect
-        st.markdown("""
+        st.markdown(
+            """
             <style>
             .stButton > button {
                 font-size: 2.5rem;
@@ -25,10 +26,16 @@ def render_voice_input_inline():
                 border-radius: 50%;
             }
             </style>
-        """, unsafe_allow_html=True)
+        """,
+            unsafe_allow_html=True,
+        )
 
-
-        if st.button(":material/mic:", key="voice_btn", help="Cliquez pour utiliser la commande vocale", use_container_width=True):
+        if st.button(
+            ":material/mic:",
+            key="voice_btn",
+            help="Cliquez pour utiliser la commande vocale",
+            use_container_width=True,
+        ):
             st.session_state.show_voice_recorder = True
 
     # Show audio recorder when button is clicked
@@ -41,7 +48,7 @@ def render_voice_input_inline():
             icon_name="microphone",
             icon_size="2x",
             key="audio_recorder_main",
-            auto_start=True
+            auto_start=True,
         )
 
         if audio_bytes:
@@ -238,7 +245,7 @@ def get_retrieval_input():
 def render_retriever_settings(mode, analytics, session_state):
     retriever_type = st.selectbox(
         "Type de Récupérateur",
-        options=["hybrid","mmr"],
+        options=["hybrid", "mmr"],
         index=0,
         help="MMR: Diversité maximale | Hybrid: Sémantique + Lexical",
     ).lower()

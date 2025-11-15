@@ -19,6 +19,7 @@ from chains.conversational_qa import ConversationalQA
 from embeddings.cloud_embedder import CloudEmbedder
 from llm_judge import AnswerEvaluator, LLMJudge
 from llm_judge.metrics import find_weak_answers, print_report_summary
+from retrievers.hybrid import HybridRetriever
 from retrievers.mmr import MMRRetriever
 from utils.logging_config import setup_logger
 from vector_store.faiss_store import FAISSVectorStore
@@ -52,6 +53,25 @@ def parse_args():
         "--mmr-lambda",
         type=float,
         default=0.7,
+        help="Lambda parameter for MMR",
+    )
+    parser.add_argument(
+        "--retriever",
+        type=str,
+        default="mmr",
+        choices=["mmr", "hybrid", "vector"],
+    )
+    parser.add_argument(
+        "--alpha",
+        type=float,
+        default=0.5,
+        help="Alpha parameter for hybrid retriever",
+    )
+    parser.add_argument(
+        "--model",
+        type=str,
+        default="mistral-small-latest",
+        help="Mistral model name for QA generation",
     )
     return parser.parse_args()
 
@@ -64,8 +84,13 @@ def main():
     logger.info("Starting Answer Quality Evaluation with LLM-as-a-Judge")
     logger.info("=" * 80)
     logger.info(f"Configuration: {args.config}")
+    logger.info(f"Retriever: {args.retriever}")
     logger.info(f"Top-K: {args.top_k}")
-    logger.info(f"MMR Lambda: {args.mmr_lambda}")
+    logger.info(f"Model: {args.model}")
+    if args.retriever == "mmr":
+        logger.info(f"MMR Lambda: {args.mmr_lambda}")
+    elif args.retriever == "hybrid":
+        logger.info(f"Hybrid Alpha: {args.alpha}")
     if args.limit:
         logger.info(f"Limit: {args.limit} questions")
 
@@ -85,20 +110,42 @@ def main():
     vector_store = FAISSVectorStore(embedding_dim=1024)
     vector_store.load(vector_store_path)
 
-    logger.info(f"Initializing MMR retriever (lambda={args.mmr_lambda})...")
-    retriever = MMRRetriever(
-        vector_store=vector_store,
-        embedder=embedder,
-        lambda_param=args.mmr_lambda,
-    )
+    chunks = None
+    if args.retriever == "hybrid":
+        import json
 
-    logger.info("Initializing ConversationalQA chain...")
+        chunks_metadata_path = vector_store_path / "chunks_metadata.json"
+        logger.info(f"Loading chunks metadata from {chunks_metadata_path}...")
+        with open(chunks_metadata_path, "r") as f:
+            chunks_data = json.load(f)
+        from utils.models import TextChunk
+
+        chunks = [TextChunk(**chunk) for chunk in chunks_data]
+        logger.info(f"Loaded {len(chunks)} chunks for hybrid retriever")
+
+    if args.retriever == "mmr":
+        logger.info(f"Initializing MMR retriever (lambda={args.mmr_lambda})...")
+        retriever = MMRRetriever(
+            vector_store=vector_store,
+            embedder=embedder,
+            lambda_param=args.mmr_lambda,
+        )
+    elif args.retriever == "hybrid":
+        logger.info(f"Initializing Hybrid retriever (alpha={args.alpha})...")
+        retriever = HybridRetriever(
+            vector_store=vector_store,
+            embedder=embedder,
+            chunks=chunks,
+            alpha=args.alpha,
+        )
+
+    logger.info(f"Initializing ConversationalQA chain with {args.model}...")
     qa_chain = ConversationalQA(
         retriever=retriever,
-        model_name="mistral-small-latest",
+        model_name=args.model,
     )
 
-    logger.info("Initializing LLM Judge (GPT-4o-mini)...")
+    logger.info("Initializing LLM Judge...")
     judge = LLMJudge(model_name="gpt-4o-mini")
 
     evaluator = AnswerEvaluator(
