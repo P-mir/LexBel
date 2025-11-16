@@ -10,6 +10,7 @@ repos:
   rev: v6.0.0
   hooks:
     - id: check-added-large-files
+      args: ["--maxkb=4000"]
     - id: check-case-conflict
     - id: check-merge-conflict
     - id: check-toml
@@ -30,3 +31,4 @@ repos:
   rev: '1.8.6' # TODO: try to keep a recent version here !
   hooks:
   - id: bandit
+    args: ['-c', 'bandit.yaml']

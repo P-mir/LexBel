@@ -1,0 +1,4 @@
+exclude:
+  - tests/*.py
+skips:
+  - B101
