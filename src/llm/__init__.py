@@ -1,3 +1,3 @@
-from llm.adapters import BaseLLM, CloudLLM, LocalLLM
+from llm.adapters import BaseLLM, CloudLLM
 
-__all__ = ["BaseLLM", "CloudLLM", "LocalLLM"]
+__all__ = ["BaseLLM", "CloudLLM"]

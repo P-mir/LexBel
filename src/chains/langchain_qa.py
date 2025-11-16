@@ -3,37 +3,14 @@ import time
 from typing import Any, Optional
 
 from langchain.chains import LLMChain
-from langchain.llms.base import LLM
 from langchain.prompts import PromptTemplate
 from langchain_mistralai import ChatMistralAI
 
-from llm import LocalLLM as LocalLLMAdapter
 from observability import calculate_cost, estimate_tokens, get_tracer
 from utils.logging_config import setup_logger
 from utils.models import QueryResponse
 
 logger = setup_logger(__name__)
-
-
-class LocalLLMWrapper(LLM):
-    """Wrapp the local model to work with LangChain.
-    -->>https://python.langchain.com/docs/how_to/custom_llm/
-    """
-
-    local_llm: Any
-
-    @property
-    def _llm_type(self) -> str:
-        return "local_flan_t5"
-
-    def _call(self, prompt: str, stop: Optional[list] = None) -> str:
-        """Call the local LLM."""
-        return self.local_llm.generate(prompt, max_tokens=512, temperature=0.3)
-
-    @property
-    def _identifying_params(self):
-        """Return identifying parameters."""
-        return {"model_name": self.local_llm.model_name}
 
 
 # Adapt the prompt to take into account that the current dataset is missing a lot of juridic context, so the LLM should use its own knowledge to complement the answer. In an actual production case, we might not want to allow that, but for demo purposes it's better to have more complete answers.
@@ -73,29 +50,21 @@ class LangChainQA:
         self.retriever = retriever
         self.llm_type = llm_type
 
-        if llm_type == "cloud":
-            model_name = model_name or "mistral-small-latest"  # cheap, fast and reasonably good
-            api_key = api_key or os.getenv("MISTRAL_API_KEY")
+        model_name = model_name or "mistral-small-latest"  # cheap, fast and reasonably good
+        api_key = api_key or os.getenv("MISTRAL_API_KEY")
 
-            if not api_key:
-                raise ValueError(
-                    "Mistral API key not found. Please set MISTRAL_API_KEY environment variable "
-                    "or pass api_key parameter."
-                )
-
-            self.llm = ChatMistralAI(
-                model=model_name,
-                temperature=0.3,
-                api_key=api_key,
+        if not api_key:
+            raise ValueError(
+                "Mistral API key not found. Please set MISTRAL_API_KEY environment variable "
+                "or pass api_key parameter."
             )
-            logger.info(f"LangChain QA initialized with Mistral model: {model_name}")
-        elif llm_type == "local":
-            model_name = model_name or "Qwen/Qwen2.5-0.5B-Instruct"
-            local_llm_adapter = LocalLLMAdapter(model_name=model_name, device="cpu")
-            self.llm = LocalLLMWrapper(local_llm=local_llm_adapter)
-            logger.info(f"LangChain QA initialized with local model: {model_name}")
-        else:
-            raise ValueError(f"Invalid llm_type: {llm_type}. Must be 'cloud' or 'local'")
+
+        self.llm = ChatMistralAI(
+            model=model_name,
+            temperature=0.3,
+            api_key=api_key,
+        )
+        logger.info(f"LangChain QA initialized with Mistral model: {model_name}")
 
         self.prompt = PromptTemplate(
             template=QA_PROMPT_TEMPLATE,
