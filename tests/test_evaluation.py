@@ -1,6 +1,6 @@
 import pytest
 
-from evaluation.metrics import (
+from src.retrieval_evaluation.metrics import (
     compute_average_precision,
     compute_map,
     compute_mrr,

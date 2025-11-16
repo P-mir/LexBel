@@ -34,7 +34,7 @@ def render_voice_input_inline():
             ":material/mic:",
             key="voice_btn",
             help="Cliquez pour utiliser la commande vocale",
-            use_container_width=True,
+            width="stretch",
         ):
             st.session_state.show_voice_recorder = True
 
@@ -158,7 +158,7 @@ def render_chat_history(chat_history):
                             if st.button(
                                 q,
                                 key=f"followup_{message.get('timestamp', 0)}_{i}",
-                                use_container_width=True,
+                                width="stretch",
                             ):
                                 st.session_state.selected_followup = q
         else:
@@ -204,7 +204,7 @@ def render_followup_questions():
         for i, (col, q) in enumerate(zip(cols, st.session_state.latest_followup_questions)):
             with col:
                 button_key = f"followup_{hash(q)}_{i}"
-                if st.button(q, key=button_key, use_container_width=True):
+                if st.button(q, key=button_key, width="stretch"):
                     logger.info(f"🟡 Button clicked! Setting selected_followup: {q}")
                     st.session_state.selected_followup = q
                     st.session_state.latest_followup_questions = []
@@ -232,9 +232,9 @@ def get_retrieval_input():
 
     col1, col2 = st.columns([2, 1])
     with col1:
-        search_button = st.button("🔎 Rechercher", type="primary", use_container_width=True)
+        search_button = st.button("🔎 Rechercher", type="primary", width="stretch")
     with col2:
-        clear_button = st.button("🗑️ Effacer", use_container_width=True)
+        clear_button = st.button("🗑️ Effacer", width="stretch")
 
     if clear_button:
         st.rerun()
@@ -259,7 +259,7 @@ def render_retriever_settings(mode, analytics, session_state):
     )
 
     if mode == "Assistant Conversationnel":
-        if st.button("🔄 Nouvelle Conversation", use_container_width=True):
+        if st.button("🔄 Nouvelle Conversation", width="stretch"):
             if len(session_state.chat_history) > 0:
                 analytics.end_conversation(session_state.session_id)
             session_state.session_id = session_state.session_id  # will be regenerated

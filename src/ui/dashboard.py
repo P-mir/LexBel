@@ -122,7 +122,7 @@ def _render_weekly_trend_chart(weekly_stats: List[Dict]):
         showlegend=False,
     )
 
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
 
 
 def _render_retriever_pie_chart(retriever_usage: Dict):
@@ -157,7 +157,7 @@ def _render_retriever_pie_chart(retriever_usage: Dict):
         showlegend=False,
     )
 
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
 
 
 def _render_popular_queries(popular_queries: List[tuple]):
